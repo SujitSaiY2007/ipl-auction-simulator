@@ -27,6 +27,8 @@
         .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .team-card { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px; text-align: center; }
         .purse { font-weight: bold; color: #d9534f; font-size: 1.2em; }
+        .team-card { cursor: pointer; transition: transform 0.2s; }
+        .team-card:hover { transform: scale(1.02); background: #e2e6ea; }
     </style>
 </head>
 <body>
@@ -82,23 +84,51 @@
         const response = await fetch('http://127.0.0.1:5000/api/teams');
         const teams = await response.json();
         
+        // Also fetch the full player list to match who belongs to who
+        const playerResponse = await fetch('http://127.0.0.1:5000/api/next-player'); // We will create a new route for this
+        
         const grid = document.getElementById('teamsGrid');
         const select = document.getElementById('teamSelect');
         grid.innerHTML = '';
         select.innerHTML = '';
 
         teams.forEach(team => {
-            // Add to grid
-            grid.innerHTML += `
-                <div class="team-card">
-                    <h3>${team.name}</h3>
-                    <div class="purse">₹${formatCurrency(team.purse)}</div>
-                    <p>Squad: ${team.squad_size}/25</p>
-                </div>
-            `;
             // Add to dropdown
             select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+
+            // Create a clickable team card
+            const card = document.createElement('div');
+            card.className = 'team-card';
+            card.innerHTML = `
+                <h3>${team.name}</h3>
+                <div class="purse">₹${formatCurrency(team.purse)}</div>
+                <p>Squad: ${team.squad_size}/25</p>
+                <p style="font-size: 0.8em; color: gray;">Click to view roster</p>
+            `;
+            
+            // Add click event to show alert with player names
+            card.onclick = () => viewTeamRoster(team.id, team.name);
+            grid.appendChild(card);
         });
+    }
+
+    // New Function to View Roster
+    async function viewTeamRoster(teamId, teamName) {
+        // Fetch all players from a new backend route we are about to create
+        const response = await fetch(`http://127.0.0.1:5000/api/roster/${teamId}`);
+        const roster = await response.json();
+
+        if (roster.length === 0) {
+            alert(`${teamName} hasn't bought any players yet!`);
+            return;
+        }
+
+        let rosterList = `${teamName} Roster:\n\n`;
+        roster.forEach(player => {
+            rosterList += `- ${player.display_name} (${player.role}) : ₹${formatCurrency(player.sold_price)}\n`;
+        });
+        
+        alert(rosterList);
     }
 
     // 2. Fetch the next player

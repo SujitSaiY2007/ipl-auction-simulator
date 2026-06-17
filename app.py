@@ -107,6 +107,20 @@ def resolve_player():
         cursor.close()
         conn.close()
 
+# --- ROUTE 4: Fetch a Specific Team's Roster ---
+@app.route('/api/roster/<int:team_id>', methods=['GET'])
+def get_team_roster(team_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Fetch all players who have been sold to this specific team ID
+    cursor.execute("SELECT display_name, role, sold_price FROM players WHERE team_id = %s", (team_id,))
+    roster = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    return jsonify(roster)
+
 if __name__ == '__main__':
     # Starts the server on port 5000
     print("Starting IPL Auction Server...")

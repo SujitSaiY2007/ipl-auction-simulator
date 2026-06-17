@@ -1,11 +1,101 @@
 display_name,country,role,base_price,batting_runs,batting_avg,batting_strike_rate,bowling_wickets,bowling_avg,bowling_strike_rate,bowling_economy,career_highlight
-R. Sharma,India,Batter,20000000,11500,30.50,140.80,0,0.00,0.00,0.00,5-time IPL Winning Captain and explosive opening batter.
-V. Kohli,India,Batter,20000000,12800,41.20,138.50,0,0.00,0.00,0.00,All-time highest run-getter in tournament history.
-J. Bumrah,India,Bowler,20000000,150,10.20,95.00,165,21.10,18.20,6.65,Consistently ranks as the world's premier death-overs specialist.
-H. Pandya,India,All-Rounder,20000000,2600,27.80,145.20,64,31.40,22.10,8.15,Impact all-rounder with elite finishing capability and mid-overs pace.
-S. Yadav,India,Batter,20000000,3800,35.40,152.10,0,0.00,0.00,0.00,World-renowned 360-degree stroke player with exceptional scoring range.
-H. Klaasen,South Africa,Wicketkeeper,20000000,4100,32.10,166.40,0,0.00,0.00,0.00,One of the most destructive spin-hitters in global T20 cricket.
-P. Cummins,Australia,Bowler,20000000,450,15.10,135.00,72,29.80,21.40,8.20,World Cup-winning tactical captain and premier new-ball bowler.
-T. Head,Australia,Batter,20000000,3200,29.10,158.60,8,34.00,24.00,8.40,Ultra-aggressive left-handed opener known for lightning powerplay starts.
-R. Pant,India,Wicketkeeper,20000000,3500,34.50,148.90,0,0.00,0.00,0.00,Dynamic dynamic keeper-batter and proven match-winner under high pressure.
-N. Pooran,West Indies,Batter,20000000,4300,31.20,155.30,0,0.00,0.00,0.00,Elite middle-overs power hitter with an outstanding boundary-to-ball ratio.
+R. Sharma,India,Batter,20000000,6211,29.58,130.05,15,38.40,29.80,8.02,5-time IPL Winning Captain and explosive opener.
+V. Kohli,India,Batter,20000000,7263,37.25,130.02,4,92.00,67.50,8.80,All-time highest run-getter in tournament history.
+J. Bumrah,India,Bowler,20000000,57,9.50,91.93,145,23.30,19.00,7.39,World's premier death-overs specialist.
+H. Pandya,India,All-Rounder,20000000,2309,28.86,145.86,53,33.26,22.40,8.80,Elite fast-bowling all-rounder and proven captain.
+S. Yadav,India,Batter,20000000,3249,32.16,143.32,0,0.00,0.00,0.00,Unorthodox 360-degree stroke player.
+H. Klaasen,South Africa,Wicketkeeper,20000000,514,36.71,165.80,0,0.00,0.00,0.00,Destructive middle-order spin hitter.
+P. Cummins,Australia,Bowler,20000000,359,18.89,152.11,45,30.15,21.20,8.54,World Cup-winning tactical captain and strike bowler.
+T. Head,Australia,Batter,20000000,205,29.28,138.51,0,0.00,0.00,0.00,Ultra-aggressive left-handed powerplay enforcer.
+R. Pant,India,Wicketkeeper,20000000,2838,34.60,147.96,0,0.00,0.00,0.00,Dynamic keeper-batter and match-winner.
+N. Pooran,West Indies,Batter,20000000,1270,27.02,156.79,0,0.00,0.00,0.00,Elite power hitter with incredible boundary ratio.
+S. Gill,India,Batter,20000000,2790,37.70,134.07,0,0.00,0.00,0.00,Generational top-order anchor and run machine.
+K. Rahul,India,Wicketkeeper,20000000,4163,46.77,134.42,0,0.00,0.00,0.00,Consistent high-volume run scorer at the top.
+R. Jadeja,India,All-Rounder,20000000,2677,26.24,128.51,152,29.57,23.30,7.60,Legendary spin all-rounder and elite fielder.
+A. Russell,West Indies,All-Rounder,20000000,2262,29.00,174.00,96,24.48,15.80,9.28,The most feared finisher in T20 history.
+R. Khan,Afghanistan,Bowler,20000000,313,11.17,133.19,139,20.75,18.70,6.66,Global T20 superstar and unplayable leg-spinner.
+M. Starc,Australia,Bowler,20000000,96,12.00,103.22,34,20.38,17.00,7.17,Lethal left-arm pace and swing generation.
+S. Curran,England,All-Rounder,20000000,613,24.52,143.22,42,34.00,21.00,9.52,Versatile pace all-rounder and death bowler.
+Y. Jaiswal,India,Batter,15000000,1172,32.55,148.73,0,0.00,0.00,0.00,Fearless young left-handed opening sensation.
+R. Gaikwad,India,Batter,15000000,1797,39.06,135.52,0,0.00,0.00,0.00,Technically flawless top-order run accumulator.
+M. Siraj,India,Bowler,15000000,97,9.70,88.18,78,29.82,20.60,8.67,Aggressive powerplay wicket-taker.
+A. Singh,India,Bowler,15000000,38,6.33,76.00,71,27.14,18.70,8.74,India's reliable left-arm death bowling specialist.
+K. Yadav,India,Bowler,15000000,81,8.10,81.00,71,28.39,21.00,8.13,In-form left-arm wrist spin maestro.
+T. Boult,New Zealand,Bowler,15000000,80,6.15,100.00,105,26.54,19.30,8.22,Master of the first-over swinging delivery.
+K. Rabada,South Africa,Bowler,15000000,186,9.78,103.33,106,21.05,15.10,8.34,Express pace and consistent wicket-taker.
+S. Samson,India,Wicketkeeper,15000000,3888,29.23,137.19,0,0.00,0.00,0.00,Stylish middle-order orchestrator and captain.
+C. Green,Australia,All-Rounder,15000000,452,50.22,160.28,6,54.16,34.00,9.44,Tall high-impact batting all-rounder.
+G. Maxwell,Australia,All-Rounder,15000000,2719,26.40,157.62,31,34.00,24.50,8.31,X-factor player known for reverse sweeps and part-time spin.
+S. Iyer,India,Batter,10000000,2776,31.54,125.38,0,0.00,0.00,0.00,Excellent player of spin and reliable captain.
+R. Patidar,India,Batter,10000000,404,33.66,144.28,0,0.00,0.00,0.00,Aggressive spin hitter in the middle overs.
+R. Singh,India,Batter,10000000,725,36.25,142.15,0,0.00,0.00,0.00,Sensational finisher and pressure player.
+I. Kishan,India,Wicketkeeper,10000000,2324,29.41,134.25,0,0.00,0.00,0.00,Explosive left-handed opening keeper.
+D. Jurel,India,Wicketkeeper,10000000,152,21.71,172.72,0,0.00,0.00,0.00,Emerging finisher with fantastic striking ability.
+M. Shami,India,Bowler,10000000,69,6.27,89.61,127,26.86,18.90,8.44,Elite seam presentation and powerplay strikes.
+Y. Chahal,India,Bowler,10000000,37,5.28,42.52,187,21.68,17.00,7.67,Highest wicket-taker in the tournament's history.
+A. Patel,India,All-Rounder,10000000,1418,20.55,130.81,112,30.54,25.30,7.24,Economic left-arm spin and handy lower-order hitting.
+J. Archer,England,Bowler,10000000,195,15.00,157.25,48,24.39,20.50,7.13,Fiery pace and intimidating bouncers.
+M. Pathirana,Sri Lanka,Bowler,10000000,0,0.00,0.00,21,19.52,14.60,8.00,Sling-action death bowling prodigy.
+W. Sundar,India,All-Rounder,5000000,378,14.00,120.38,36,32.69,26.70,7.34,Powerplay specialist off-spinner.
+T. Varma,India,Batter,5000000,740,38.94,144.53,0,0.00,0.00,0.00,Consistent middle-order southpaw.
+A. Sharma,India,All-Rounder,5000000,897,22.42,137.36,9,39.88,27.00,8.86,Aggressive opener and part-time left-arm spin.
+S. Dube,India,All-Rounder,5000000,1074,28.26,141.68,4,55.00,34.00,9.50,Designated spin-hitter with massive power.
+P. Salt,England,Wicketkeeper,5000000,218,27.25,163.90,0,0.00,0.00,0.00,Aggressive intent at the top of the order.
+A. Khan,India,Bowler,5000000,34,5.66,94.44,55,25.50,18.10,8.45,Hit-the-deck pace bowler.
+R. Bishnoi,India,Bowler,5000000,18,6.00,69.23,53,28.01,21.80,7.59,Quick leg-spinner with a lethal googly.
+N. Reddy,India,All-Rounder,2000000,0,0.00,0.00,0,0.00,0.00,0.00,Highly rated uncapped pace all-rounder.
+A. Raghuvanshi,India,Batter,2000000,0,0.00,0.00,0,0.00,0.00,0.00,Top-order uncapped batting prodigy.
+M. Yadav,India,Bowler,2000000,0,0.00,0.00,0,0.00,0.00,0.00,Uncapped express pace sensation (150+ kmph).
+S. Sharma,India,Bowler,2000000,0,0.00,0.00,0,0.00,0.00,0.00,Uncapped mystery spinner.
+H. Rana,India,Bowler,2000000,0,0.00,0.00,0,0.00,0.00,0.00,Uncapped aggressive fast bowler.
+A. Kamboj,India,All-Rounder,2000000,0,0.00,0.00,0,0.00,0.00,0.00,Uncapped domestic pace all-rounder.
+M. Dhoni,India,Wicketkeeper,20000000,5082,38.79,135.92,0,0.00,0.00,0.00,Legendary captain and ultimate finisher.
+J. Buttler,England,Wicketkeeper,20000000,3223,37.91,148.32,0,0.00,0.00,0.00,World-class explosive opening batter.
+F. du Plessis,South Africa,Batter,20000000,4133,36.90,134.14,0,0.00,0.00,0.00,Highly consistent top-order run accumulator.
+S. Narine,West Indies,All-Rounder,20000000,1046,16.60,159.69,163,25.78,23.10,6.73,Mystery spin maestro and pinch-hitter.
+L. Livingstone,England,All-Rounder,20000000,828,29.57,165.60,8,44.25,27.00,9.83,Massive ball-striker and versatile spinner.
+Q. de Kock,South Africa,Wicketkeeper,20000000,2907,31.60,134.21,0,0.00,0.00,0.00,Aggressive left-handed wicketkeeper-batter.
+D. Miller,South Africa,Batter,15000000,2714,36.18,138.46,0,0.00,0.00,0.00,Killer Miller is a premium middle-order finisher.
+M. Ali,England,All-Rounder,15000000,1034,22.47,143.01,33,26.12,23.40,6.95,Elegant striker and handy off-spinner.
+T. David,Australia,Batter,15000000,418,29.85,177.87,0,0.00,0.00,0.00,Pure power-hitter for the death overs.
+D. Warner,Australia,Batter,15000000,6397,41.53,139.92,0,0.00,0.00,0.00,One of the most decorated overseas openers.
+K. Williamson,New Zealand,Batter,15000000,2101,36.22,126.03,0,0.00,0.00,0.00,Tactical mastermind and innings anchor.
+N. Nortje,South Africa,Bowler,15000000,23,5.75,104.54,53,24.15,16.50,8.79,Express pace capable of hitting 150+ kmph.
+L. Ferguson,New Zealand,Bowler,15000000,31,7.75,106.89,37,31.64,22.10,8.58,Fiery fast bowler with a lethal yorker.
+W. Hasaranga,Sri Lanka,All-Rounder,15000000,72,10.28,97.29,35,21.37,16.00,8.13,World-class wrist spinner and handy batter.
+M. Theekshana,Sri Lanka,Bowler,10000000,7,7.00,63.63,23,33.00,28.00,7.07,Powerplay mystery spinner.
+R. Ravindra,New Zealand,All-Rounder,10000000,222,22.20,160.86,0,0.00,0.00,0.00,Breakout star with bat and left-arm spin.
+D. Conway,New Zealand,Batter,10000000,924,46.20,141.28,0,0.00,0.00,0.00,Technically sound opening batter.
+I. Sharma,India,Bowler,10000000,56,9.33,87.50,82,35.45,26.10,8.11,Veteran tall fast bowler with great seam up.
+M. Sharma,India,Bowler,10000000,34,5.66,94.44,119,25.38,18.00,8.44,Master of the deceptive back-of-the-hand slower ball.
+S. Thakur,India,All-Rounder,10000000,286,11.91,140.19,89,28.76,18.80,9.16,Golden arm wicket-taker and capable hitter.
+D. Chahar,India,Bowler,10000000,79,11.28,138.59,72,28.04,21.50,7.84,Premier swing bowler in the powerplay.
+H. Patel,India,Bowler,10000000,236,12.42,126.88,111,24.03,16.70,8.59,Death overs specialist with dipping slower balls.
+T. Natarajan,India,Bowler,10000000,3,1.50,50.00,48,31.39,21.50,8.77,Pinpoint left-arm yorker execution.
+V. Chakravarthy,India,Bowler,10000000,2,2.00,40.00,62,23.30,18.80,7.45,Unorthodox mystery spin from both ends.
+U. Malik,India,Bowler,10000000,10,10.00,76.92,29,26.10,17.40,8.96,Raw and terrifying pace.
+S. Ahmed,India,All-Rounder,5000000,321,16.89,120.22,14,40.14,27.50,8.75,Gritty lower-order batter and left-arm spinner.
+K. Pandya,India,All-Rounder,5000000,1514,21.94,133.04,71,33.15,26.50,7.48,Experienced spin all-rounder and leadership figure.
+V. Iyer,India,All-Rounder,5000000,956,28.11,136.18,3,56.33,37.00,9.13,Tall opening batter and part-time medium pace.
+R. Tewatia,India,All-Rounder,5000000,825,24.26,132.63,32,34.03,25.60,7.91,Ice-cold finisher and clutch player.
+D. Hooda,India,All-Rounder,5000000,1320,18.33,131.73,10,50.90,36.50,8.36,Versatile middle-order batter and off-spin option.
+W. Saha,India,Wicketkeeper,5000000,2798,24.98,128.05,0,0.00,0.00,0.00,Reliable veteran opener and elite gloveman.
+J. Sharma,India,Wicketkeeper,5000000,543,24.68,159.23,0,0.00,0.00,0.00,Aggressive intent from ball one.
+P. Singh,India,Wicketkeeper,5000000,756,21.60,146.22,0,0.00,0.00,0.00,Talented opening batter with incredible bat speed.
+M. Pandey,India,Batter,5000000,3808,29.06,120.96,0,0.00,0.00,0.00,Experienced anchor and incredible fielder.
+R. Tripathi,India,Batter,5000000,2071,26.89,138.99,0,0.00,0.00,0.00,Selfless top-order striker.
+S. Sudharsan,India,Batter,5000000,507,46.09,137.02,0,0.00,0.00,0.00,Elegant left-handed anchor.
+A. Badoni,India,Batter,2000000,399,22.16,132.11,2,27.50,18.00,9.16,Emerging lower-order finisher.
+N. Wadhera,India,Batter,2000000,241,26.77,145.18,0,0.00,0.00,0.00,Stylish uncapped left-handed prospect.
+S. Khan,India,Batter,2000000,426,18.52,134.81,0,0.00,0.00,0.00,Domestic power-hitter.
+M. Kumar,India,Bowler,5000000,7,7.00,58.33,7,46.57,26.50,10.51,Dependable death-overs executor.
+A. Madhwal,India,Bowler,2000000,4,4.00,66.66,14,15.64,10.90,8.58,Breakout star with skiddy pace.
+Y. Thakur,India,Bowler,2000000,2,2.00,50.00,13,22.46,14.70,9.15,Uncapped fast bowler with a heavy ball.
+P. Chawla,India,Bowler,5000000,609,11.94,111.94,179,26.79,20.40,7.87,Veteran leg-spinner and IPL legend.
+A. Mishra,India,Bowler,5000000,362,11.67,89.60,173,23.82,19.30,7.38,Crafty flight and drift specialist.
+S. Joseph,West Indies,Bowler,5000000,23,7.66,95.83,20,28.80,18.80,9.19,Tall hit-the-deck West Indian fast bowler.
+N. Burger,South Africa,Bowler,5000000,0,0.00,0.00,14,21.28,14.10,9.02,Aggressive left-arm pace.
+A. Rawat,India,Wicketkeeper,2000000,220,18.33,115.78,0,0.00,0.00,0.00,Handy backup keeper and lower-order bat.
+R. Dar,India,Bowler,2000000,0,0.00,0.00,2,42.50,24.00,10.62,Uncapped swing bowler.
+A. Manohar,India,Batter,2000000,222,18.50,140.50,0,0.00,0.00,0.00,Uncapped middle-order muscle.
+M. Markande,India,Bowler,2000000,25,6.25,92.59,29,26.68,18.60,8.58,Slippery leg-spinner.
