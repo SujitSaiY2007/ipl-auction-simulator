@@ -17,15 +17,15 @@ except mysql.connector.Error as err:
     print(f"Error connecting to MySQL: {err}")
     exit()
 
-print("1. Tearing down database for AI & Sudden Death Upgrades...")
+print("1. Tearing down database for Phase 3 Hall of Fame Upgrades...")
+cursor.execute("DROP TABLE IF EXISTS franchise_history;")
 cursor.execute("DROP TABLE IF EXISTS auction_players;")
 cursor.execute("DROP TABLE IF EXISTS auction_teams;")
 cursor.execute("DROP TABLE IF EXISTS auctions;")
 cursor.execute("DROP TABLE IF EXISTS players;")
-cursor.execute("DROP TABLE IF EXISTS teams;")       # Legacy cleanup
 cursor.execute("DROP TABLE IF EXISTS franchises;")  
 
-print("2. Building AI-Ready Architecture...")
+print("2. Building AI-Ready Architecture with Permanent History Logs...")
 
 # TABLE 1: Master Franchises 
 cursor.execute("""
@@ -35,7 +35,21 @@ CREATE TABLE franchises (
 );
 """)
 
-# TABLE 2: Master Players
+# TABLE 2: Franchise Hall of Fame (NEW IN PHASE 3)
+cursor.execute("""
+CREATE TABLE franchise_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    franchise_id INT,
+    auction_name VARCHAR(255),
+    tbi_score INT,
+    grade VARCHAR(5),
+    is_winner BOOLEAN DEFAULT FALSE,
+    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (franchise_id) REFERENCES franchises(id) ON DELETE CASCADE
+);
+""")
+
+# TABLE 3: Master Players
 cursor.execute("""
 CREATE TABLE players (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -54,7 +68,7 @@ CREATE TABLE players (
 );
 """)
 
-# TABLE 3: Auctions (Upgraded with Pitch and Minimum Squad Rules)
+# TABLE 4: Auctions 
 cursor.execute("""
 CREATE TABLE auctions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -67,7 +81,7 @@ CREATE TABLE auctions (
 );
 """)
 
-# TABLE 4: Auction Teams (Upgraded for Sudden Death Tracking)
+# TABLE 5: Auction Teams 
 cursor.execute("""
 CREATE TABLE auction_teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -83,7 +97,7 @@ CREATE TABLE auction_teams (
 );
 """)
 
-# TABLE 5: Auction Players
+# TABLE 6: Auction Players
 cursor.execute("""
 CREATE TABLE auction_players (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,7 +114,7 @@ CREATE TABLE auction_players (
 
 db.commit()
 
-# 4. Load the CSV Data into the Master Pool
+# 4. Load the CSV Data 
 csv_path = os.path.join('data', 'players.csv')
 if os.path.exists(csv_path):
     print("3. Loading the 100-player Master Roster...")
@@ -125,7 +139,7 @@ if os.path.exists(csv_path):
         cursor.execute(insert_query, values)
         
     db.commit()
-    print(f"Success: AI-Ready Blank Database built. {len(df)} players loaded. 0 Franchises registered.")
+    print(f"Success: AI-Ready Database built with Permanent Hall of Fame Tracking. {len(df)} players loaded.")
 else:
     print(f"Error: Could not find players.csv at {csv_path}")
 

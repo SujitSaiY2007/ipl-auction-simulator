@@ -3,66 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Driven IPL Strategy Room</title>
+    <title>Ultimate IPL Auction Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; margin: 0; padding: 15px; }
-        h1, h2, h3 { color: #333; margin-top: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-        .lobby-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
-        .input-group input, .input-group select { flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; min-width: 150px;}
-        .btn-add { background: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .checkbox-list { max-height: 180px; overflow-y: auto; border: 1px solid #ccc; padding: 15px; background: white; border-radius: 5px; margin-bottom: 15px; }
-        .checkbox-list label { display: block; margin-bottom: 8px; cursor: pointer; }
-        .save-file { background: white; border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-launch { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-load { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-right: 5px;}
-        .btn-kill { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        :root {
+            --primary: #1e3c72;
+            --secondary: #2a5298;
+            --accent: #ffc107;
+            --success: #28a745;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            margin: 0; 
+            padding: 20px; 
+        }
+
+        h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; margin-top: 0; }
+        
+        .main-title { text-align: center; color: var(--primary); font-size: 2.8em; margin-bottom: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);}
+        .sub-title { text-align: center; color: var(--text-muted); font-size: 1.2em; margin-bottom: 30px; font-weight: 500; }
+
+        .container { max-width: 1250px; margin: 0 auto; background: transparent; }
+        
+        .panel { 
+            background: var(--card-bg); 
+            border-radius: 12px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06); 
+            padding: 25px; 
+            border: 1px solid rgba(0,0,0,0.05); 
+            overflow-y: auto;
+        }
+
+        .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        .input-group { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;}
+        .input-group input, .input-group select { 
+            flex: 1; 
+            padding: 12px 15px; 
+            border-radius: 8px; 
+            border: 1px solid #dfe6e9; 
+            font-family: 'Inter', sans-serif;
+            font-size: 1em;
+            min-width: 180px;
+            transition: border-color 0.3s ease;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        button {
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        button:active { transform: translateY(0); }
+
+        .btn-add { background: var(--info); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-launch { width: 100%; background: linear-gradient(135deg, #00b09b, #96c93d); color: white; border: none; padding: 15px; font-size: 1.2em; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;}
+        .btn-load { background: var(--secondary); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-right: 5px; font-weight: 500;}
+        .btn-kill { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 500;}
+
+        .checkbox-list { max-height: 250px; overflow-y: auto; border: 1px solid #dfe6e9; padding: 15px; background: #fafbfc; border-radius: 8px; margin-bottom: 20px; }
+        .checkbox-list input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
+
+        .save-file { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; margin-bottom: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;}
+        .save-file:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
         .dashboard-layout { display: grid; grid-template-columns: 280px 1fr 320px; gap: 20px; height: 92vh; }
-        .panel { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; overflow-y: auto; border: 1px solid #dee2e6; }
         
-        .ai-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; width: 100%; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden;}
-        .ai-rating-badge { position: absolute; top: 15px; right: 20px; background: #ffc107; color: black; font-size: 1.5em; font-weight: bold; padding: 5px 12px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .ai-box { background: rgba(255, 255, 255, 0.15); border-left: 5px solid #ffc107; padding: 12px; border-radius: 4px; text-align: left; margin-top: 15px; font-size: 0.95em; }
+        .ai-card { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; width: 100%; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(30, 60, 114, 0.2);}
+        .ai-rating-badge { position: absolute; top: 15px; right: 20px; background: var(--accent); color: var(--text-main); font-size: 1.6em; font-weight: 800; padding: 5px 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .ai-box { background: rgba(255, 255, 255, 0.1); border-left: 5px solid var(--accent); padding: 15px; border-radius: 4px; text-align: left; margin-top: 20px; font-size: 0.95em; line-height: 1.5; backdrop-filter: blur(5px);}
         
-        .tab-buttons { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 8px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; background: #e2e6ea; color: #495057; }
-        .tab-btn.active { background: #007bff; color: white; }
-        .pool-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f1f3f5; font-size: 0.95em; align-items: center;}
+        .tab-buttons { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; cursor: pointer; border-radius: 6px; font-weight: 600; background: #e2e6ea; color: var(--text-muted); box-shadow: none;}
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(30,60,114,0.2);}
+        .pool-item { display: flex; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid #f1f3f5; font-size: 0.95em; align-items: center;}
         
-        .bidding-area { background: #f8f9fa; width: 100%; padding: 25px; border-radius: 12px; text-align: center; border: 1px solid #dee2e6; }
-        .bidding-area h2 { color: #28a745; font-size: 3em; margin: 10px 0; }
-        .bid-btns button { padding: 12px 20px; margin: 5px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; color: black; font-weight: bold; background: #ffc107; }
+        .bidding-area { background: #f8f9fa; width: 100%; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e9ecef; }
+        .bidding-area h2 { color: var(--success); font-size: 3.5em; margin: 10px 0; font-weight: 800;}
+        .bid-btns button { padding: 12px 25px; margin: 5px; font-size: 1.1em; border: none; border-radius: 8px; cursor: pointer; color: var(--text-main); font-weight: bold; background: var(--accent); }
         
-        .action-btns button { padding: 12px 18px; margin: 5px; font-size: 1.1em; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
-        .btn-sold { background-color: #28a745; }
-        .btn-unsold { background-color: #dc3545; }
-        .btn-next { background-color: #007bff; }
-        .btn-complete { background-color: #6f42c1; width: 100%; margin-top: 8px; padding: 6px; font-size: 0.85em; border-radius: 4px; border: none; color: white; font-weight: bold; cursor: pointer;}
+        .action-btns button { padding: 15px 25px; margin: 5px; font-size: 1.1em; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-sold { background-color: var(--success); }
+        .btn-unsold { background-color: var(--danger); }
+        .btn-next { background-color: var(--secondary); }
         
-        .team-card-small { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #dee2e6; cursor: pointer; }
-        .budget-container { background: #e9ecef; border-radius: 10px; height: 10px; width: 100%; overflow: hidden; }
-        .budget-fill { height: 100%; transition: width 0.4s; }
-        .sd-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; text-align: center; }
+        .team-card-small { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e9ecef; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .team-card-small:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
+        .budget-container { background: #e9ecef; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; margin-top: 8px;}
+        .budget-fill { height: 100%; transition: width 0.5s ease; }
         
-        .analytics-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
-        .analytics-modal { background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; }
-        .scorecard-card { border-left: 6px solid #6f42c1; background: #f8f9fa; padding: 15px; margin-bottom: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;}
-        .score-rank { font-size: 2em; font-weight: bold; color: #6f42c1; }
+        .analytics-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px);}
+        .analytics-modal { background: white; padding: 35px; border-radius: 16px; max-width: 750px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
+        .scorecard-card { background: #f8f9fa; padding: 20px; margin-bottom: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+        .score-rank { font-size: 2.5em; font-weight: 800; color: #6f42c1; }
     </style>
 </head>
 <body>
 
 <div class="container" id="lobby-screen">
-    <h1 style="text-align: center;">🏏 AI Roster Management & Simulation Room</h1>
+    <h1 class="main-title">🏏 Welcome to the Ultimate Real Auction Experience</h1>
+    <p class="sub-title">Construct the Ultimate Roster. Evaluated by Advanced AI.</p>
+    
     <div class="lobby-grid">
-        <div class="lobby-panel">
-            <h3>1. Simulation Metrics Configuration</h3>
+        <div class="panel">
+            <h3>⚙️ 1. Settings for the Auction</h3>
             <div class="input-group">
                 <input type="text" id="newAuctionName" placeholder="Session Title (e.g., Season X Draft)">
-                <input type="number" id="customBudget" placeholder="Roster Budget (Crores)" value="100">
+                <input type="number" id="customBudget" placeholder="Min Budget (Crores) *Required">
             </div>
             <div class="input-group">
                 <select id="pitchType">
@@ -71,31 +135,38 @@
                     <option value="Dust Bowl">🌪️ Dust Bowl Surface (Spin Turning)</option>
                     <option value="Flat Track">超 Flat Track Highway (Batting Heaven)</option>
                 </select>
-                <input type="number" id="minSquadSize" placeholder="Minimum Squad Size" value="15">
+                <input type="number" id="minSquadSize" placeholder="Min Players *Required">
             </div>
+            <small style="color: var(--text-muted); display: block; margin-top: -10px; margin-bottom: 20px;">* Max team players allowed: 25</small>
 
-            <h3>2. Franchise Database Aggregator</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin:0;">👥 2. Teams to Participate</h3>
+                <button class="btn-load" style="background:var(--accent); color:var(--text-main); font-weight:bold; box-shadow:0 4px 10px rgba(255,193,7,0.3);" onclick="openHallOfFame()">🏆 View Hall of Fame</button>
+            </div>
+            
             <div class="input-group">
                 <input type="text" id="newFranchiseName" placeholder="Register New Team Identity">
-                <button class="btn-add" onclick="addNewFranchise()">➕ Add to Storage</button>
+                <button class="btn-add" onclick="addNewFranchise()">➕ Add to Database</button>
             </div>
             
-            <p><strong>Check Participating Grid:</strong></p>
+            <p style="font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                <span>Select Participating Franchises:</span>
+                <span id="teamCounterText" style="color: var(--primary); background: #e1f5fe; padding: 4px 10px; border-radius: 12px; font-size: 0.9em;">Selected Teams: 0</span>
+            </p>
             <div id="franchiseCheckboxes" class="checkbox-list"></div>
             
-            <button class="btn-launch" onclick="createNewGame()">🚀 Launch Simulation Engine</button>
+            <button class="btn-launch" onclick="createNewGame()">🚀 Launch Auction Engine</button>
         </div>
         
-        <div class="lobby-panel">
-            <h3>Active Hard-Drive Save Ledgers</h3>
-            <div id="pastGamesList" style="height: 400px; overflow-y: auto;"></div>
+        <div class="panel">
+            <h3>📜 Previous Pending and Completed Games</h3>
+            <div id="pastGamesList" style="height: 450px; overflow-y: auto; padding-right: 10px;"></div>
         </div>
     </div>
 </div>
 
-<div id="auction-screen" style="display: none;">
+<div id="auction-screen" style="display: none; max-width: 1400px; margin: 0 auto;">
     <div class="dashboard-layout">
-        
         <div class="panel">
             <h3>📋 Roster Inventories</h3>
             <div class="tab-buttons">
@@ -105,47 +176,49 @@
             <div id="poolList"></div>
         </div>
 
-        <div class="panel center-stage">
-            <div class="top-bar">
-                <button class="btn-quit" onclick="location.reload()">🏠 Main Menu</button>
-                <button class="btn-add" style="background:#6f42c1" onclick="fetchAIAnalytics()">📊 Run AI Final Evaluation</button>
-                <h4 id="activeAuctionTitle" style="margin: 0; color: #6c757d;">Session Matrix</h4>
+        <div class="panel" style="display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button class="btn-kill" style="background:#636e72;" onclick="location.reload()">🏠 Main Menu</button>
+                <h4 id="activeAuctionTitle" style="margin: 0; color: var(--primary); font-size: 1.5em; font-weight: 800;">Session Matrix</h4>
+                <button class="btn-add" style="background:#6f42c1" onclick="concludeAuction()">🏁 Conclude & Crown Winner</button>
             </div>
 
-            <div id="suddenDeathAlert" style="display:none;"></div>
+            <div id="suddenDeathAlert" style="display:none; width: 100%; background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 1px solid #ffeeba;"></div>
             
             <div class="ai-card">
                 <div class="ai-rating-badge" id="aiRating">--</div>
-                <h1 id="playerName">Awaiting Vector...</h1>
-                <p id="playerRole" style="color: #adb5bd; font-size: 1.2em;">- | -</p>
-                <div class="stats-grid">
-                    <div><strong>Opening Stake:</strong><br><span id="basePrice">₹0</span></div>
-                    <div><strong>Analytical Note:</strong><br><span id="highlight">-</span></div>
+                <h1 id="playerName" style="font-size: 2.8em; margin-bottom: 5px;">Awaiting Vector...</h1>
+                <p id="playerRole" style="color: #d1d8e0; font-size: 1.2em; font-weight: 500;">- | -</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: rgba(0,0,0,0.15); padding: 20px; border-radius: 10px; margin-top: 25px;">
+                    <div><strong style="color:#f1c40f;">Opening Stake:</strong><br><span id="basePrice" style="font-size: 1.2em;">₹0</span></div>
+                    <div><strong style="color:#f1c40f;">Analytical Note:</strong><br><span id="highlight">-</span></div>
                 </div>
+                
                 <div class="ai-box">
-                    <strong>FICA Evaluation Core Insight:</strong><br>
+                    <strong style="color: var(--accent);">FICA Evaluation Core Insight:</strong><br>
                     <span id="aiAdvice">Select 'Next' to initialize statistical analysis profiling.</span>
                 </div>
             </div>
 
             <div class="bidding-area">
                 <h2 id="currentBidDisplay">Current Value: ₹0</h2>
-                <div class="bid-btns">
+                <div class="bid-btns" style="margin-bottom: 25px;">
                     <button onclick="increaseBid(2000000)">+ 20L</button>
                     <button onclick="increaseBid(5000000)">+ 50L</button>
                     <button onclick="increaseBid(10000000)">+ 1 Cr</button>
                 </div>
                 
-                <div style="margin: 20px 0;">
-                    <label style="font-weight: bold; font-size: 1.1em;">Assign Destination Node: </label>
-                    <select id="teamSelect" style="font-size: 1.1em; padding: 6px; border-radius: 5px;"></select>
+                <div style="margin: 20px 0; background: #fff; padding: 15px; border-radius: 8px; display: inline-block; border: 1px solid #dfe6e9;">
+                    <label style="font-weight: 600; font-size: 1.1em; color: var(--text-main); margin-right: 10px;">Assign Destination Node: </label>
+                    <select id="teamSelect" style="font-size: 1.1em; padding: 8px; border-radius: 6px; border: 1px solid #ccc;"></select>
                 </div>
 
-                <div class="action-btns">
+                <div class="action-btns" style="margin-top: 10px;">
                     <button class="btn-sold" onclick="sellPlayer()">🔨 SOLD</button>
                     <button class="btn-unsold" onclick="unsoldPlayer()">❌ UNSOLD</button>
                     <button class="btn-next" onclick="fetchNextPlayer()">⏭️ Next</button>
-                    <button class="btn-quit" style="background:#dc3545" id="undoBtn" style="display: none;" onclick="undoLast()">↩️ Undo</button>
+                    <button class="btn-kill" style="background:#636e72; padding: 15px 25px; margin-left: 5px; font-size: 1.1em;" id="undoBtn" style="display: none;" onclick="undoLast()">↩️ Undo</button>
                 </div>
             </div>
         </div>
@@ -159,11 +232,34 @@
 
 <div class="analytics-overlay" id="analyticsModal">
     <div class="analytics-modal">
-        <h2 style="text-align: center; color:#6f42c1;">📊 AI Squad Balance Index Report Card</h2>
-        <p style="text-align:center; color:gray;">Evaluated via Expected Run Differential and FICA Core Composition metrics.</p>
-        <hr>
+        <h2 style="text-align: center; color:#6f42c1; font-size: 2.2em;">📊 Final AI Squad Evaluation</h2>
+        <p style="text-align:center; color:var(--text-muted); font-size: 1.1em;">The Auction is Concluded. The AI Engine has crowned the winner!</p>
+        <hr style="border: 0; height: 1px; background: #dfe6e9; margin: 20px 0;">
         <div id="scorecardContainer"></div>
-        <button class="btn-kill" style="width:100%; padding:12px; margin-top:15px;" onclick="document.getElementById('analyticsModal').style.display='none'">Close Analytical Assessment</button>
+        <button class="btn-kill" style="width:100%; padding:15px; margin-top:20px; font-size: 1.1em;" onclick="location.reload()">Exit to Lobby</button>
+    </div>
+</div>
+
+<div class="analytics-overlay" id="hofModal">
+    <div class="analytics-modal" style="max-width: 800px;">
+        <h2 style="text-align: center; color:var(--primary); font-size: 2.2em;">🏆 Franchise Hall of Fame</h2>
+        <p style="text-align:center; color:var(--text-muted); font-size: 1.1em;">Permanent legacy stats across all completed auctions.</p>
+        <hr style="border: 0; height: 1px; background: #dfe6e9; margin: 20px 0;">
+        
+        <table style="width:100%; border-collapse: collapse; text-align: left; font-size: 1.1em;">
+            <thead>
+                <tr style="border-bottom: 2px solid #ccc; color:var(--text-muted);">
+                    <th style="padding:10px;">Rank</th>
+                    <th style="padding:10px;">Franchise</th>
+                    <th style="padding:10px;">Matches Played</th>
+                    <th style="padding:10px;">Trophies Won 🏆</th>
+                    <th style="padding:10px;">Avg AI Score</th>
+                </tr>
+            </thead>
+            <tbody id="hofTableBody"></tbody>
+        </table>
+        
+        <button class="btn-kill" style="width:100%; padding:15px; margin-top:20px; font-size: 1.1em; background:var(--primary);" onclick="document.getElementById('hofModal').style.display='none'">Close Ledger</button>
     </div>
 </div>
 
@@ -185,14 +281,19 @@
             const res = await fetch(url, options);
             if (!res.ok) {
                 const errText = await res.text();
-                alert(`CRITICAL SERVER ERROR (Code ${res.status}):\n\nThe Python server crashed. Check your VS Code terminal for the exact error line.\n\nServer returned: ${errText.substring(0, 200)}...`);
+                alert(`CRITICAL SERVER ERROR (Code ${res.status}):\n\nThe backend prevented this action. \nError message: ${errText.substring(0, 150)}`);
                 throw new Error(errText);
             }
             return res;
         } catch (error) {
-            if (error.message === "Failed to fetch") alert("NETWORK ERROR: Your Python server (app.py) is completely offline or not responding.");
+            console.error("Network Exception:", error);
             throw error;
         }
+    }
+
+    function updateTeamCounter() {
+        const count = document.querySelectorAll('.franchise-cb:checked').length;
+        document.getElementById('teamCounterText').innerText = `Selected Teams: ${count}`;
     }
 
     async function loadLobby() {
@@ -204,26 +305,36 @@
             checkList.innerHTML = '';
             
             if (data.franchises.length === 0) {
-                checkList.innerHTML = `<div style="text-align: center; color: #6c757d; margin: 15px 0;">Roster parameters empty. Utilize the generator block above to input files into storage.</div>`;
+                checkList.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin: 20px 0;">Permanent Database is empty. Register your franchises above to begin.</div>`;
             } else {
                 data.franchises.forEach(f => {
-                    checkList.innerHTML += `<label><input type="checkbox" class="franchise-cb" value="${f.id}"> ${f.name}</label>`;
+                    checkList.innerHTML += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:#fff; padding:8px 12px; border-radius:8px; border:1px solid #dfe6e9;">
+                            <label style="margin:0; cursor:pointer; width:100%; display:flex; align-items:center; gap:10px; font-weight:600;">
+                                <input type="checkbox" class="franchise-cb" value="${f.id}" onchange="updateTeamCounter()"> ${f.name}
+                            </label>
+                            <button class="btn-kill" style="padding:6px 12px; font-size:0.85em; background:transparent; color:var(--danger); border:1px solid var(--danger);" onclick="deleteFranchise(${f.id}, '${f.name.replace(/'/g, "\\'")}')">🗑️ Remove</button>
+                        </div>`;
                 });
             }
+            updateTeamCounter();
 
             const gamesList = document.getElementById('pastGamesList');
             gamesList.innerHTML = '';
             if (data.auctions.length === 0) {
-                gamesList.innerHTML = '<p style="text-align: center; color: gray; margin-top: 20px;">No transaction logs identified.</p>';
+                gamesList.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 40px; font-style: italic;">No previous games found.</p>';
             } else {
                 data.auctions.forEach(a => {
-                    const status = a.status === 'In Progress' ? '🟢 Active' : '⚪ Paused';
+                    // PHASE 3: Handle the UI for officially "Completed" games
+                    const statusUI = a.status === 'Completed' ? '🏆 Completed' : (a.status === 'In Progress' ? '🟢 Active' : '⚪ Paused');
+                    const resumeBtn = a.status !== 'Completed' ? `<button class="btn-load" onclick="resumeGame(${a.id}, '${a.name}')">Resume</button>` : `<span style="margin-right:10px; font-size:0.9em; color:gray;">(Locked)</span>`;
+                    
                     gamesList.innerHTML += `
                         <div class="save-file">
-                            <div><strong>${a.name}</strong><br><small>Surface: ${a.pitch_type || 'Standard'} | Limit: ${a.min_squad_size || 15} | ${status}</small></div>
+                            <div><strong style="font-size:1.1em; color:var(--primary);">${a.name}</strong><br><small style="color:var(--text-muted);">Pitch: ${a.pitch_type || 'Standard'} | Min Players: ${a.min_squad_size || 15} <br> Status: ${statusUI}</small></div>
                             <div>
-                                <button class="btn-load" onclick="resumeGame(${a.id}, '${a.name}')">Resume</button>
-                                <button class="btn-kill" onclick="killGame(${a.id})">🗑️ Kill</button>
+                                ${resumeBtn}
+                                <button class="btn-kill" onclick="killGame(${a.id})">🗑️</button>
                             </div>
                         </div>`;
                 });
@@ -231,46 +342,88 @@
         } catch (e) { console.error("Lobby failed to load.", e); }
     }
 
+    // --- PHASE 3: HALL OF FAME DISPLAY LOGIC ---
+    async function openHallOfFame() {
+        try {
+            const res = await safeFetch('http://127.0.0.1:5000/api/franchises/history');
+            const history = await res.json();
+            
+            const tbody = document.getElementById('hofTableBody');
+            tbody.innerHTML = '';
+            
+            if(history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">No statistics logged yet. Finish an auction to begin!</td></tr>';
+            } else {
+                history.forEach((h, i) => {
+                    const rank = i + 1;
+                    const trophyIcon = h.trophies > 0 ? '🏆'.repeat(h.trophies) : '<span style="color:gray;">-</span>';
+                    tbody.innerHTML += `
+                        <tr style="border-bottom: 1px solid #f1f3f5;">
+                            <td style="padding:15px; font-weight:800; color:gray;">#${rank}</td>
+                            <td style="padding:15px; font-weight:bold; color:var(--primary);">${h.name}</td>
+                            <td style="padding:15px;">${h.matches_played}</td>
+                            <td style="padding:15px;">${trophyIcon}</td>
+                            <td style="padding:15px; font-weight:bold; color:var(--info);">${parseFloat(h.avg_tbi).toFixed(1)}</td>
+                        </tr>
+                    `;
+                });
+            }
+            document.getElementById('hofModal').style.display = 'flex';
+        } catch(e) { console.error(e); }
+    }
+
     async function addNewFranchise() {
         const nameInput = document.getElementById('newFranchiseName');
-        if (!nameInput.value) return alert("Identify team name string variable!");
+        if (!nameInput.value) return alert("Please enter a valid Team Name first!");
         try {
             await safeFetch('http://127.0.0.1:5000/api/franchises/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: nameInput.value }) });
             nameInput.value = ''; loadLobby();
-        } catch(e) {}
+        } catch(e) { console.error(e); }
+    }
+
+    async function deleteFranchise(id, name) {
+        if(!confirm(`Are you absolutely sure you want to permanently delete '${name}'? This action cannot be undone and will wipe related saved games.`)) return;
+        try {
+            await safeFetch('http://127.0.0.1:5000/api/franchises/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ franchise_id: id }) });
+            loadLobby();
+        } catch(e) { console.error(e); }
     }
 
     async function killGame(auctionId) {
-        if(!confirm("Execute master kill command? Cascaded data nodes will be unlinked from local storage.")) return;
+        if(!confirm("Are you sure? This will permanently delete this game and its rosters from the database.")) return;
         try {
             await safeFetch('http://127.0.0.1:5000/api/lobby/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ auction_id: auctionId }) });
             loadLobby();
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
     async function createNewGame() {
         const nameInput = document.getElementById('newAuctionName').value || 'Simulation Loop';
-        const budgetInput = document.getElementById('customBudget').value || 100;
-        const pitchInput = document.getElementById('pitchType').value;
+        const budgetInput = document.getElementById('customBudget').value;
         const minSizeInput = document.getElementById('minSquadSize').value;
+        const pitchInput = document.getElementById('pitchType').value;
+        
+        if (!budgetInput || !minSizeInput) return alert("Missing Settings! You must manually enter the Min Budget and Min Players required.");
+
         const checkboxes = document.querySelectorAll('.franchise-cb:checked');
         const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
-        if (selectedIds.length === 0) return alert("Manual registration matrix is empty!");
+        if (selectedIds.length === 0) return alert("You must select at least one franchise to participate!");
+        
         try {
             await safeFetch('http://127.0.0.1:5000/api/lobby/new', { 
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ name: nameInput, budget: budgetInput, pitch_type: pitchInput, min_squad_size: minSizeInput, franchise_ids: selectedIds }) 
             });
             document.getElementById('activeAuctionTitle').innerText = nameInput; transitionToAuction();
-        } catch (e) {}
+        } catch (e) { console.error(e); }
     }
 
     async function resumeGame(auctionId, auctionName) {
         try {
             await safeFetch('http://127.0.0.1:5000/api/lobby/load', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ auction_id: auctionId }) });
             document.getElementById('activeAuctionTitle').innerText = auctionName; transitionToAuction();
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
     function transitionToAuction() {
@@ -295,52 +448,48 @@
             const select = document.getElementById('teamSelect');
             const sdAlert = document.getElementById('suddenDeathAlert');
             
-            grid.innerHTML = '';
-            select.innerHTML = '';
+            grid.innerHTML = ''; select.innerHTML = '';
 
             if (globalMeta && globalMeta.sudden_death_active) {
                 sdAlert.style.display = "block";
-                sdAlert.className = "sd-warning";
                 sdAlert.innerText = "⚠️ 2x Sudden Death Sub-routine Activated: Remaining teams must draft within allocation parameters.";
-            } else {
-                sdAlert.style.display = "none";
-            }
+            } else { sdAlert.style.display = "none"; }
 
             teams.forEach(team => {
                 if (!team.is_finished) { select.innerHTML += `<option value="${team.id}">${team.name}</option>`; }
                 const startingBudget = Number(team.purse) + Number(team.spent);
                 const percentLeft = startingBudget > 0 ? (team.purse / startingBudget) * 100 : 0;
-                let barColor = '#28a745'; if (percentLeft < 35) barColor = '#ffc107'; if (percentLeft < 15) barColor = '#dc3545'; 
+                let barColor = 'var(--success)'; if (percentLeft < 35) barColor = 'var(--accent)'; if (percentLeft < 15) barColor = 'var(--danger)'; 
 
                 const card = document.createElement('div');
                 card.className = 'team-card-small';
-                if(team.is_finished) card.style.opacity = '0.5';
+                if(team.is_finished) card.style.opacity = '0.6';
 
                 let sdContextLine = "";
-                if (team.sudden_death_draws_left > 0) { sdContextLine = `<div style="color:#dc3545; font-weight:bold; font-size:0.8em;">Sudden Death Draws Left: ${team.sudden_death_draws_left} (Needs: ${team.sudden_death_needs})</div>`; }
+                if (team.sudden_death_draws_left > 0) { sdContextLine = `<div style="color:var(--danger); font-weight:bold; font-size:0.85em; margin-top: 8px;">Sudden Death Draws Left: ${team.sudden_death_draws_left} (Needs: ${team.sudden_death_needs})</div>`; }
 
                 card.innerHTML = `
-                    <div class="team-header">
-                        <h4>${team.name} ${team.is_finished ? '🔒' : ''}</h4>
-                        <span style="font-weight: bold; color: ${barColor}">${formatCurrency(team.purse)}</span>
+                    <div style="display:flex; justify-content:space-between; align-items: baseline; margin-bottom: 5px;">
+                        <h4 style="margin:0; color:var(--primary); font-size:1.1em;">${team.name} ${team.is_finished ? '🔒' : ''}</h4>
+                        <span style="font-weight: 800; font-size:1.1em; color: ${barColor}">${formatCurrency(team.purse)}</span>
                     </div>
-                    <div style="font-size: 0.8em; color: gray; margin-bottom: 5px;">Roster: ${team.squad_size}/${globalMeta.min_squad_size}</div>
+                    <div style="font-size: 0.85em; color: var(--text-muted); font-weight:500;">Players: ${team.squad_size} / 25 (Min: ${globalMeta.min_squad_size})</div>
                     <div class="budget-container"><div class="budget-fill" style="width: ${percentLeft}%; background-color: ${barColor};"></div></div>
                     ${sdContextLine}
-                    ${(!team.is_finished && team.squad_size >= globalMeta.min_squad_size) ? `<button class="btn-complete" onclick="event.stopPropagation(); lockTeamRoster(${team.id})">🏁 Complete Draft</button>` : ''}
+                    ${(!team.is_finished && team.squad_size >= globalMeta.min_squad_size) ? `<button style="background:var(--secondary); color:white; border:none; width:100%; padding:8px; margin-top:10px; border-radius:6px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); lockTeamRoster(${team.id})">🏁 Complete Draft</button>` : ''}
                 `;
                 card.onclick = () => viewTeamRoster(team.id, team.name);
                 grid.appendChild(card);
             });
-        } catch(e) {}
+        } catch(e) { console.error("Dashboard Load Failed:", e); }
     }
 
     async function lockTeamRoster(teamId) {
-        if(!confirm("Verify roster validation parameters? This forces secondary algorithms into 2x draft modes.")) return;
+        if(!confirm("Lock in this roster? This will force remaining teams into the 2x Sudden Death drafting mode.")) return;
         try {
             await safeFetch('http://127.0.0.1:5000/api/teams/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_id: teamId }) });
             syncDashboard(); fetchNextPlayer();
-        } catch (e) {}
+        } catch (e) { console.error(e); }
     }
 
     async function fetchPool() {
@@ -349,7 +498,7 @@
             fullPlayerPool = await res.json();
             const activeTab = document.querySelector('.tab-btn.active').innerText;
             renderPool(activeTab);
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
     function renderPool(statusFilter) {
@@ -358,14 +507,14 @@
         const listDiv = document.getElementById('poolList');
         
         const filtered = fullPlayerPool.filter(p => p.status === statusFilter);
-        if (filtered.length === 0) { listDiv.innerHTML = `<p style="text-align:center; color:gray; margin-top:20px;">Inventory Node Empty</p>`; return; }
+        if (filtered.length === 0) { listDiv.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:30px; font-weight:500;">Inventory Empty</p>`; return; }
 
         let poolHtml = '';
         filtered.forEach(p => {
             poolHtml += `
                 <div class="pool-item">
-                    <div><strong>${p.display_name}</strong><br><span style="color:gray; font-size:0.9em">${p.role}</span></div>
-                    <div class="badge" style="background:#cce5ff; color:#004085; font-size:0.8em; padding:4px 8px; border-radius:12px;">${formatCurrency(p.base_price)}</div>
+                    <div><strong style="color:var(--text-main); font-size:1.05em;">${p.display_name}</strong><br><span style="color:var(--text-muted); font-size:0.85em; font-weight:500;">${p.role}</span></div>
+                    <div style="background:#e1f5fe; color:#0277bd; font-weight:bold; font-size:0.85em; padding:5px 10px; border-radius:20px;">${formatCurrency(p.base_price)}</div>
                 </div>`;
         });
         listDiv.innerHTML = poolHtml;
@@ -376,8 +525,8 @@
             const res = await fetch('http://127.0.0.1:5000/api/next-player');
             if (res.status === 404) return alert("Roster simulation sequence optimization complete!");
             if (!res.ok) {
-                const errText = await res.text();
-                alert(`PYTHON CRASH DETECTED:\n\nThe server threw a 500 Error when generating AI metrics.\nError output: ${errText.substring(0, 150)}...`);
+                const errPacket = await res.json();
+                alert(`PYTHON ENGINE ERROR DETECTED:\n\n${errPacket.error}`);
                 return;
             }
             
@@ -395,16 +544,15 @@
             document.getElementById('highlight').innerText = currentPlayer.career_highlight;
             document.getElementById('aiRating').innerText = currentPlayer.ai_rating;
             document.getElementById('aiAdvice').innerText = currentPlayer.ai_advice;
-            
             currentBid = currentPlayer.base_price;
-            document.getElementById('currentBidDisplay').innerText = `Current Bid: ${formatCurrency(currentBid)}`;
-        } catch(e) { alert("Network Error: Could not execute Next Player routine."); }
+            document.getElementById('currentBidDisplay').innerText = `Current Value: ${formatCurrency(currentBid)}`;
+        } catch(e) { console.error(e); alert("Network Error: Could not execute Next Player routine."); }
     }
 
     function increaseBid(amount) {
         if (!currentPlayer) return;
         currentBid += amount;
-        document.getElementById('currentBidDisplay').innerText = `Current Bid: ${formatCurrency(currentBid)}`;
+        document.getElementById('currentBidDisplay').innerText = `Current Value: ${formatCurrency(currentBid)}`;
     }
 
     async function sellPlayer() {
@@ -422,9 +570,9 @@
                 document.getElementById('undoBtn').style.display = 'inline-block';
                 currentPlayer = null; await syncDashboard(); fetchNextPlayer(); 
             } else {
-                const data = await res.json(); alert(`Validation Intercept: ${data.error}`);
+                const data = await res.json(); alert(`Constraint Rejection: ${data.error}`);
             }
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
     async function unsoldPlayer() {
@@ -441,17 +589,17 @@
                 document.getElementById('undoBtn').style.display = 'inline-block';
                 currentPlayer = null; await syncDashboard(); fetchNextPlayer();
             } else {
-                const data = await res.json(); alert(`Validation Intercept: ${data.error}`);
+                const data = await res.json(); alert(`Constraint Rejection: ${data.error}`);
             }
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
     async function undoLast() {
         if (!lastTransaction) return;
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/undo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lastTransaction) });
+            await safeFetch('http://127.0.0.1:5000/api/undo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lastTransaction) });
             lastTransaction = null; document.getElementById('undoBtn').style.display = 'none'; syncDashboard();
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
     async function viewTeamRoster(teamId, teamName) {
@@ -465,26 +613,37 @@
         } catch(e) { console.error(e); }
     }
 
-    async function fetchAIAnalytics() {
+    // --- PHASE 3: CONCLUDING AND RANKING THE TEAMS ---
+    async function concludeAuction() {
+        if(!confirm("Are you ready to officially conclude this auction? The AI will grade your teams, crown a winner, and permanently save the results to the Hall of Fame.")) return;
+        
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/auctions/rate-squads');
+            const res = await safeFetch('http://127.0.0.1:5000/api/auctions/finish', { method: 'POST' });
             const scorecards = await res.json();
+            
             const container = document.getElementById('scorecardContainer');
             container.innerHTML = '';
-            scorecards.forEach(sc => {
+            
+            scorecards.forEach((sc, index) => {
+                // Determine Visual Crown Elements for the #1 Team
+                const isWinner = index === 0;
+                const crownText = isWinner ? '👑 CHAMPION' : `#${index + 1}`;
+                const cardBg = isWinner ? 'linear-gradient(135deg, #fff3cd 0%, #fff 100%)' : '#f8f9fa';
+                const borderCol = isWinner ? '#ffc107' : '#6f42c1';
+                
                 container.innerHTML += `
-                    <div class="scorecard-card">
+                    <div class="scorecard-card" style="border-left: 6px solid ${borderCol}; background: ${cardBg};">
                         <div>
-                            <h3>${sc.team_name}</h3>
-                            <p style="margin:4px 0;"><strong>Batting Velocity:</strong> ${sc.batting_velocity}</p>
-                            <p style="margin:4px 0;"><strong>Bowling Containment:</strong> ${sc.bowling_containment}</p>
-                            <p style="margin:4px 0; color:#17a2b8;"><strong>Surface Sync:</strong> ${sc.surface_alignment}</p>
+                            <h3 style="color:var(--primary); margin-bottom:10px; font-size:1.4em;">${sc.team_name} <span style="font-size:0.7em; color:${borderCol}; margin-left:10px;">${crownText}</span></h3>
+                            <p style="margin:4px 0; color:var(--text-main);"><strong>Batting Velocity:</strong> ${sc.batting_velocity}</p>
+                            <p style="margin:4px 0; color:var(--text-main);"><strong>Bowling Containment:</strong> ${sc.bowling_containment}</p>
+                            <p style="margin:4px 0; color:var(--info);"><strong>Surface Sync:</strong> ${sc.surface_alignment}</p>
                         </div>
-                        <div class="score-rank">${sc.grade} <span style="font-size:0.4em; color:gray;">(${sc.tbi_score})</span></div>
+                        <div class="score-rank" style="color:${borderCol};">${sc.grade} <br><span style="font-size:0.35em; color:var(--text-muted); display:block; text-align:center;">Score: ${sc.tbi_score}</span></div>
                     </div>`;
             });
             document.getElementById('analyticsModal').style.display = 'flex';
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 </script>
 </body>
