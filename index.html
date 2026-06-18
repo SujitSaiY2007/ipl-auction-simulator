@@ -5,167 +5,271 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mock IPL Auction</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1, h2 { text-align: center; color: #1a1a1a; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
         
-        /* Player Card */
-        .player-card { background: #00468c; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
-        .player-stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-top: 15px; }
-        
-        /* Auction Controls */
-        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 30px; padding: 20px; background: #e9ecef; border-radius: 8px; }
-        .bid-display { font-size: 2em; font-weight: bold; color: #28a745; }
-        .buttons { display: flex; gap: 10px; }
-        button { padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; border-radius: 5px; color: white; }
-        .btn-bid { background: #ffc107; color: black; }
-        .btn-sold { background: #28a745; }
-        .btn-unsold { background: #dc3545; }
-        select { padding: 10px; font-size: 16px; border-radius: 5px; }
+        /* Lobby Styles */
+        .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .lobby-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e2e6ea; }
+        .checkbox-list { max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 15px; background: white; border-radius: 5px; margin-bottom: 15px; }
+        .checkbox-list label { display: block; margin-bottom: 8px; cursor: pointer; }
+        .save-file { background: white; border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-launch { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-load { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
 
-        /* Teams Grid */
-        .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
-        .team-card { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px; text-align: center; }
-        .purse { font-weight: bold; color: #d9534f; font-size: 1.2em; }
-        .team-card { cursor: pointer; transition: transform 0.2s; }
+        /* Auction Room Styles */
+        .player-card { background: #003a6c; color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-top: 15px; }
+        .bidding-area { background: #e9ecef; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 30px; }
+        .bidding-area h2 { color: #28a745; font-size: 2.5em; margin: 10px 0; }
+        .buttons button { padding: 12px 20px; margin: 5px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-sold { background-color: #28a745; }
+        .btn-unsold { background-color: #dc3545; }
+        .franchise-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .team-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; text-align: center; cursor: pointer; transition: transform 0.2s; }
         .team-card:hover { transform: scale(1.02); background: #e2e6ea; }
+        .team-card h3 { margin: 0 0 10px 0; color: #333; }
+        .team-card .purse { font-size: 1.4em; color: #dc3545; font-weight: bold; }
+        .btn-quit { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; float: left; margin-bottom: 10px;}
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🏏 IPL Auction Control Room</h1>
+    
+    <div id="lobby-screen">
+        <h1>🏏 IPL Simulator Lobby</h1>
+        <div class="lobby-grid">
+            
+            <div class="lobby-panel">
+                <h3>Start New Game</h3>
+                <input type="text" id="newAuctionName" placeholder="Enter Session Name (e.g., Friday Night Draft)" style="width: 95%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc;">
+                
+                <p><strong>Select Participating Franchises:</strong></p>
+                <div id="franchiseCheckboxes" class="checkbox-list">
+                    </div>
+                
+                <button class="btn-launch" onclick="createNewGame()">🚀 Launch New Auction</button>
+            </div>
 
-    <div class="player-card" id="playerCard">
-        <h2 id="playerName">Click "Next Player" to Start</h2>
-        <p><span id="playerRole">-</span> | <span id="playerCountry">-</span></p>
-        <div class="player-stats">
-            <div><strong>Base Price:</strong> <br>₹<span id="basePrice">0</span></div>
-            <div><strong>Highlight:</strong> <br><span id="playerHighlight">-</span></div>
+            <div class="lobby-panel">
+                <h3>Resume Past Game</h3>
+                <div id="pastGamesList" style="max-height: 350px; overflow-y: auto;">
+                    </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="controls">
-        <div class="bid-display">Current Bid: ₹<span id="currentBidDisplay">0</span></div>
+    <div id="auction-screen" style="display: none;">
+        <button class="btn-quit" onclick="location.reload()">🏠 Quit to Lobby</button>
+        <div style="clear: both;"></div>
         
-        <div class="buttons">
-            <button class="btn-bid" onclick="increaseBid(2000000)">+ ₹20 Lakh</button>
-            <button class="btn-bid" onclick="increaseBid(5000000)">+ ₹50 Lakh</button>
-            <button class="btn-bid" onclick="increaseBid(10000000)">+ ₹1 Crore</button>
+        <h1 id="activeAuctionTitle">🏏 Auction Room</h1>
+        
+        <div class="player-card">
+            <h1 id="playerName">Click "Next Player" to Start</h1>
+            <p id="playerRole" style="color: #ccc; font-size: 1.2em;">- | -</p>
+            <div class="stats-grid">
+                <div><strong>Base Price:</strong><br><span id="basePrice">₹0</span></div>
+                <div><strong>Highlight:</strong><br><span id="highlight">-</span></div>
+            </div>
         </div>
 
-        <div>
-            <label for="teamSelect"><strong>Selling to:</strong></label>
-            <select id="teamSelect">
-                </select>
+        <div class="bidding-area">
+            <h2 id="currentBidDisplay">Current Bid: ₹0</h2>
+            <div>
+                <button style="background: #ffc107; color: black;" onclick="increaseBid(2000000)">+ ₹20 Lakh</button>
+                <button style="background: #ffc107; color: black;" onclick="increaseBid(5000000)">+ ₹50 Lakh</button>
+                <button style="background: #ffc107; color: black;" onclick="increaseBid(10000000)">+ ₹1 Crore</button>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <label style="font-weight: bold; font-size: 1.2em;">Selling to: </label>
+                <select id="teamSelect" style="font-size: 1.2em; padding: 5px;"></select>
+            </div>
+
+            <div class="buttons">
+                <button class="btn-sold" onclick="sellPlayer()">🔨 SOLD</button>
+                <button class="btn-unsold" onclick="unsoldPlayer()">❌ UNSOLD</button>
+                <button style="background: #007bff;" onclick="fetchNextPlayer()">⏭️ Next Player</button>
+                <button id="undoBtn" style="background: #6c757d; display: none;" onclick="undoLast()">↩️ Undo Last</button>
+            </div>
         </div>
 
-        <div class="buttons">
-            <button class="btn-sold" onclick="sellPlayer()">🔨 SOLD</button>
-            <button class="btn-unsold" onclick="unsoldPlayer()">❌ UNSOLD</button>
-            <button style="background: #007bff;" onclick="fetchNextPlayer()">⏭️ Next Player</button>
-            <button id="undoBtn" style="background: #6c757d; display: none; color: white;" onclick="undoLast()">↩️ Undo Last</button>
-        </div>
+        <h2 style="text-align: center; margin-top: 40px;">Franchise Status</h2>
+        <div class="franchise-grid" id="teamsGrid"></div>
     </div>
 
-    <h2>Franchise Status</h2>
-    <div class="teams-grid" id="teamsGrid">
-        </div>
 </div>
 
 <script>
+    // --- STATE VARIABLES ---
     let currentPlayer = null;
     let currentBid = 0;
-    let lastTransaction = null; // Tracks the most recent action for the Undo function
-    // Format numbers nicely (e.g., 20000000 -> 2,00,00,000)
-    const formatCurrency = (num) => new Intl.NumberFormat('en-IN').format(num);
+    let lastTransaction = null;
 
-    // 1. Fetch all teams and update the screen
-    // 1. Fetch all teams and update the screen
-async function loadTeams() {
-    try {
-        const response = await fetch('http://127.0.0.1:5000/api/teams');
-        if (!response.ok) throw new Error(`HTTP status ${response.status}`);
+    // --- INITIALIZATION ---
+    window.onload = loadLobby;
+
+    // Formatter Utility
+    function formatCurrency(amount) {
+        return amount.toLocaleString('en-IN');
+    }
+
+    // ==========================================
+    // LOBBY LOGIC
+    // ==========================================
+    async function loadLobby() {
+        const response = await fetch('http://127.0.0.1:5000/api/lobby/data');
+        const data = await response.json();
         
-        const teams = await response.json();
-        
-        const grid = document.getElementById('teamsGrid');
-        const select = document.getElementById('teamSelect');
-        grid.innerHTML = '';
-        select.innerHTML = '';
-
-        teams.forEach(team => {
-            // Add to dropdown
-            select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
-
-            // Create a clickable team card
-            const card = document.createElement('div');
-            card.className = 'team-card';
-            card.innerHTML = `
-                <h3>${team.name}</h3>
-                <div class="purse">₹${formatCurrency(team.purse)}</div>
-                <p>Squad: ${team.squad_size}/25</p>
-                <p style="font-size: 0.8em; color: gray;">Click to view roster</p>
+        // 1. Render Franchises (Checkboxes)
+        const checkList = document.getElementById('franchiseCheckboxes');
+        checkList.innerHTML = '';
+        data.franchises.forEach(f => {
+            checkList.innerHTML += `
+                <label>
+                    <input type="checkbox" class="franchise-cb" value="${f.id}" checked>
+                    ${f.name}
+                </label>
             `;
-            
-            // Add click event to show alert with player names
-            card.onclick = () => viewTeamRoster(team.id, team.name);
-            grid.appendChild(card);
         });
-    } catch (error) {
-        console.error("Diagnostic Error:", error);
-        alert("Critical Failure: Cannot connect to the Python backend. Verify app.py is running without errors.");
-    }
-}
 
-    // New Function to View Roster
-    async function viewTeamRoster(teamId, teamName) {
-        // Fetch all players from a new backend route we are about to create
-        const response = await fetch(`http://127.0.0.1:5000/api/roster/${teamId}`);
-        const roster = await response.json();
-
-        if (roster.length === 0) {
-            alert(`${teamName} hasn't bought any players yet!`);
-            return;
+        // 2. Render Past Save Files
+        const gamesList = document.getElementById('pastGamesList');
+        gamesList.innerHTML = '';
+        if (data.auctions.length === 0) {
+            gamesList.innerHTML = '<p style="color: gray;">No saved games found.</p>';
+        } else {
+            data.auctions.forEach(a => {
+                const date = new Date(a.date_created).toLocaleDateString();
+                const statusBadge = a.status === 'In Progress' ? '🟢 Active' : '⚪ Paused';
+                gamesList.innerHTML += `
+                    <div class="save-file">
+                        <div>
+                            <strong>${a.name}</strong><br>
+                            <small style="color: gray;">${date} | ${statusBadge}</small>
+                        </div>
+                        <button class="btn-load" onclick="resumeGame(${a.id}, '${a.name}')">Resume</button>
+                    </div>
+                `;
+            });
         }
-
-        let rosterList = `${teamName} Roster:\n\n`;
-        roster.forEach(player => {
-            rosterList += `- ${player.display_name} (${player.role}) : ₹${formatCurrency(player.sold_price)}\n`;
-        });
-        
-        alert(rosterList);
     }
 
-    // 2. Fetch the next player
+    async function createNewGame() {
+        const nameInput = document.getElementById('newAuctionName').value || 'Custom Session';
+        
+        // Gather selected checkboxes
+        const checkboxes = document.querySelectorAll('.franchise-cb:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+        if (selectedIds.length === 0) return alert("Please select at least one franchise!");
+
+        const response = await fetch('http://127.0.0.1:5000/api/lobby/new', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: nameInput, franchise_ids: selectedIds })
+        });
+
+        if (response.ok) {
+            document.getElementById('activeAuctionTitle').innerText = `🏏 ${nameInput}`;
+            transitionToAuction();
+        } else {
+            alert("Failed to create game.");
+        }
+    }
+
+    async function resumeGame(auctionId, auctionName) {
+        const response = await fetch('http://127.0.0.1:5000/api/lobby/load', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auction_id: auctionId })
+        });
+
+        if (response.ok) {
+            document.getElementById('activeAuctionTitle').innerText = `🏏 ${auctionName}`;
+            transitionToAuction();
+        }
+    }
+
+    function transitionToAuction() {
+        // Hide Lobby, Show Auction Room
+        document.getElementById('lobby-screen').style.display = 'none';
+        document.getElementById('auction-screen').style.display = 'block';
+        
+        // Load the specific game state
+        loadTeams();
+        
+        // Reset player screen
+        currentPlayer = null;
+        document.getElementById('playerName').innerText = 'Click "Next Player" to Start';
+        document.getElementById('playerRole').innerText = '- | -';
+        document.getElementById('basePrice').innerText = '₹0';
+        document.getElementById('highlight').innerText = '-';
+        currentBid = 0;
+        document.getElementById('currentBidDisplay').innerText = `Current Bid: ₹0`;
+        document.getElementById('undoBtn').style.display = 'none';
+    }
+
+
+    // ==========================================
+    // AUCTION GAMEPLAY LOGIC
+    // ==========================================
+    async function loadTeams() {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/teams');
+            if (!response.ok) throw new Error("Failed to load teams");
+            
+            const teams = await response.json();
+            const grid = document.getElementById('teamsGrid');
+            const select = document.getElementById('teamSelect');
+            grid.innerHTML = '';
+            select.innerHTML = '';
+
+            teams.forEach(team => {
+                select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                const card = document.createElement('div');
+                card.className = 'team-card';
+                card.innerHTML = `
+                    <h3>${team.name}</h3>
+                    <div class="purse">₹${formatCurrency(team.purse)}</div>
+                    <p>Squad: ${team.squad_size}/25</p>
+                    <p style="font-size: 0.8em; color: gray;">Click to view roster</p>
+                `;
+                card.onclick = () => viewTeamRoster(team.id, team.name);
+                grid.appendChild(card);
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     async function fetchNextPlayer() {
         const response = await fetch('http://127.0.0.1:5000/api/next-player');
+        if (response.status === 404) return alert("No more available players in this session!");
         
-        if (response.status === 404) {
-            alert("The auction pool is empty! All players have been drawn.");
-            return;
-        }
-
         currentPlayer = await response.json();
-        currentBid = currentPlayer.base_price; // Reset bid to base price
-
-        // Update the screen text
+        
         document.getElementById('playerName').innerText = currentPlayer.display_name;
-        document.getElementById('playerRole').innerText = currentPlayer.role;
-        document.getElementById('playerCountry').innerText = currentPlayer.country;
-        document.getElementById('basePrice').innerText = formatCurrency(currentPlayer.base_price);
-        document.getElementById('playerHighlight').innerText = currentPlayer.career_highlight;
-        document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid);
+        document.getElementById('playerRole').innerText = `${currentPlayer.role} | ${currentPlayer.country}`;
+        document.getElementById('basePrice').innerText = `₹${formatCurrency(currentPlayer.base_price)}`;
+        document.getElementById('highlight').innerText = currentPlayer.career_highlight;
+        
+        currentBid = currentPlayer.base_price;
+        document.getElementById('currentBidDisplay').innerText = `Current Bid: ₹${formatCurrency(currentBid)}`;
+        
+        // Removed the line that was hiding the Undo button here!
     }
 
-    // 3. Increase the bid
     function increaseBid(amount) {
         if (!currentPlayer) return alert("Please draw a player first!");
         currentBid += amount;
-        document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid);
+        document.getElementById('currentBidDisplay').innerText = `Current Bid: ₹${formatCurrency(currentBid)}`;
     }
 
-    // 4. Mark Player as Sold
     async function sellPlayer() {
         if (!currentPlayer) return alert("Please draw a player first!");
         const teamId = document.getElementById('teamSelect').value;
@@ -173,39 +277,24 @@ async function loadTeams() {
         const response = await fetch('http://127.0.0.1:5000/api/resolve-player', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                player_id: currentPlayer.id,
-                status: 'Sold',
-                team_id: parseInt(teamId),
-                final_price: currentBid
-            })
+            body: JSON.stringify({ player_id: currentPlayer.id, status: 'Sold', team_id: parseInt(teamId), final_price: currentBid })
         });
 
-        const result = await response.json();
         if (response.ok) {
             alert(`${currentPlayer.display_name} SOLD for ₹${formatCurrency(currentBid)}!`);
-            
-            // Save transaction details to memory
-            lastTransaction = {
-                player_id: currentPlayer.id,
-                was_sold: true,
-                team_id: parseInt(teamId),
-                final_price: currentBid
-            };
+            lastTransaction = { player_id: currentPlayer.id, was_sold: true, team_id: parseInt(teamId), final_price: currentBid };
             document.getElementById('undoBtn').style.display = 'inline-block';
-
             currentPlayer = null; 
             loadTeams(); 
             fetchNextPlayer(); 
         } else {
-            alert(`Error: ${result.error}`);
+            const res = await response.json();
+            alert(`Error: ${res.error}`);
         }
     }
 
-    // 5. Mark Player as Unsold
     async function unsoldPlayer() {
         if (!currentPlayer) return alert("Please draw a player first!");
-        
         const response = await fetch('http://127.0.0.1:5000/api/resolve-player', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -214,61 +303,40 @@ async function loadTeams() {
 
         if (response.ok) {
             alert(`${currentPlayer.display_name} goes UNSOLD.`);
-            
-            // Save transaction details to memory
-            lastTransaction = {
-                player_id: currentPlayer.id,
-                was_sold: false
-            };
+            lastTransaction = { player_id: currentPlayer.id, was_sold: false };
             document.getElementById('undoBtn').style.display = 'inline-block';
-
             currentPlayer = null;
             fetchNextPlayer();
         }
     }
 
-    
-    // 6. Undo the last transaction
     async function undoLast() {
-        if (!lastTransaction) {
-            alert("No transaction history found!");
-            return;
-        }
+        if (!lastTransaction) return alert("No transaction history found!");
+        if (!confirm("Are you sure you want to undo the last action?")) return;
 
-        const confirmUndo = confirm("Are you sure you want to undo the last action?");
-        if (!confirmUndo) return;
+        const response = await fetch('http://127.0.0.1:5000/api/undo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lastTransaction)
+        });
 
-        try {
-            const response = await fetch('http://127.0.0.1:5000/api/undo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(lastTransaction)
-            });
-
-            if (response.ok) {
-                alert("Undo successful! The last player has been returned to the available pool.");
-                lastTransaction = null; 
-                document.getElementById('undoBtn').style.display = 'none'; 
-                loadTeams(); 
-            } else {
-                // Safely handle errors even if the server sends HTML instead of JSON
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    const result = await response.json();
-                    alert(`Backend Error: ${result.error}`);
-                } else {
-                    alert(`Server returned HTTP ${response.status}. Check the VS Code terminal for the Python error.`);
-                }
-            }
-        } catch (error) {
-            console.error("Network/Parsing Error:", error);
-            alert("A critical error occurred. Check the browser console (F12) and the VS Code terminal.");
+        if (response.ok) {
+            alert("Undo successful! Player returned to the pool.");
+            lastTransaction = null; 
+            document.getElementById('undoBtn').style.display = 'none'; 
+            loadTeams(); 
         }
     }
-    
-    // Initialize the app when the page opens
-    window.onload = loadTeams;
-</script>
 
+    async function viewTeamRoster(teamId, teamName) {
+        const response = await fetch(`http://127.0.0.1:5000/api/roster/${teamId}`);
+        const roster = await response.json();
+        if (roster.length === 0) return alert(`${teamName} hasn't bought any players yet!`);
+        
+        let rosterList = `${teamName} Roster:\n\n`;
+        roster.forEach(p => rosterList += `- ${p.display_name} (${p.role}) : ₹${formatCurrency(p.sold_price)}\n`);
+        alert(rosterList);
+    }
+</script>
 </body>
 </html>
