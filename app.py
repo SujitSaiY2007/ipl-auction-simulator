@@ -22,7 +22,7 @@ def get_db_connection():
 @app.route('/api/teams', methods=['GET'])
 def get_teams():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) # Returns data as a dictionary
+    cursor = conn.cursor(dictionary=True)
     
     cursor.execute("SELECT * FROM teams")
     teams = cursor.fetchall()
@@ -37,7 +37,6 @@ def get_next_player():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Grab one random player who hasn't been sold yet
     cursor.execute("SELECT * FROM players WHERE status = 'Available' ORDER BY RAND() LIMIT 1")
     player = cursor.fetchone()
     
@@ -45,7 +44,6 @@ def get_next_player():
     conn.close()
     
     if player:
-        # Convert decimal values to floats so they format nicely for the web
         player['batting_avg'] = float(player['batting_avg'])
         player['batting_strike_rate'] = float(player['batting_strike_rate'])
         player['bowling_avg'] = float(player['bowling_avg'])
@@ -60,7 +58,7 @@ def get_next_player():
 def resolve_player():
     data = request.json
     player_id = data.get('player_id')
-    status = data.get('status')  # 'Sold' or 'Unsold'
+    status = data.get('status')
     team_id = data.get('team_id')
     final_price = data.get('final_price', 0)
 
@@ -69,7 +67,6 @@ def resolve_player():
 
     try:
         if status == 'Sold':
-            # 1. Check if the team has enough money and space
             cursor.execute("SELECT purse, squad_size FROM teams WHERE id = %s", (team_id,))
             team = cursor.fetchone()
             
@@ -80,18 +77,12 @@ def resolve_player():
             if team['squad_size'] >= 25:
                 return jsonify({"error": "Squad is full (Max 25)!"}), 400
 
-            # 2. Update the team's budget and roster size
             cursor.execute("""
-                UPDATE teams 
-                SET purse = purse - %s, squad_size = squad_size + 1 
-                WHERE id = %s
+                UPDATE teams SET purse = purse - %s, squad_size = squad_size + 1 WHERE id = %s
             """, (final_price, team_id))
 
-            # 3. Update the player's profile to 'Sold'
             cursor.execute("""
-                UPDATE players 
-                SET status = 'Sold', sold_price = %s, team_id = %s 
-                WHERE id = %s
+                UPDATE players SET status = 'Sold', sold_price = %s, team_id = %s WHERE id = %s
             """, (final_price, team_id, player_id))
             
         elif status == 'Unsold':
@@ -113,7 +104,6 @@ def get_team_roster(team_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Fetch all players who have been sold to this specific team ID
     cursor.execute("SELECT display_name, role, sold_price FROM players WHERE team_id = %s", (team_id,))
     roster = cursor.fetchall()
     
@@ -122,6 +112,5 @@ def get_team_roster(team_id):
     return jsonify(roster)
 
 if __name__ == '__main__':
-    # Starts the server on port 5000
     print("Starting IPL Auction Server...")
     app.run(port=5000, debug=True)

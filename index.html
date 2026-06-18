@@ -80,12 +80,13 @@
     const formatCurrency = (num) => new Intl.NumberFormat('en-IN').format(num);
 
     // 1. Fetch all teams and update the screen
-    async function loadTeams() {
+    // 1. Fetch all teams and update the screen
+async function loadTeams() {
+    try {
         const response = await fetch('http://127.0.0.1:5000/api/teams');
-        const teams = await response.json();
+        if (!response.ok) throw new Error(`HTTP status ${response.status}`);
         
-        // Also fetch the full player list to match who belongs to who
-        const playerResponse = await fetch('http://127.0.0.1:5000/api/next-player'); // We will create a new route for this
+        const teams = await response.json();
         
         const grid = document.getElementById('teamsGrid');
         const select = document.getElementById('teamSelect');
@@ -110,7 +111,11 @@
             card.onclick = () => viewTeamRoster(team.id, team.name);
             grid.appendChild(card);
         });
+    } catch (error) {
+        console.error("Diagnostic Error:", error);
+        alert("Critical Failure: Cannot connect to the Python backend. Verify app.py is running without errors.");
     }
+}
 
     // New Function to View Roster
     async function viewTeamRoster(teamId, teamName) {

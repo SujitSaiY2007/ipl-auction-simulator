@@ -44,6 +44,9 @@ cursor.executemany("INSERT IGNORE INTO teams (name) VALUES (%s);", teams_data)
 
 # 3. CREATE PLAYERS TABLE SECOND (The Child)
 print("4. Creating players table...")
+
+# This safely deletes the broken table structure first
+cursor.execute("DROP TABLE IF EXISTS players;")
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS players (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -51,6 +54,7 @@ CREATE TABLE IF NOT EXISTS players (
     country VARCHAR(100),
     role VARCHAR(50),
     base_price BIGINT,
+    sold_price BIGINT DEFAULT NULL,  # <-- WE ADDED THIS LINE BACK
     batting_runs INT DEFAULT 0,
     batting_avg DECIMAL(5,2) DEFAULT 0.00,
     batting_strike_rate DECIMAL(5,2) DEFAULT 0.00,
