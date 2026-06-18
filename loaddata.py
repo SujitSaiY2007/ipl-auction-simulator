@@ -3,58 +3,47 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
-# Load the hidden environment variables
 load_dotenv()
 
-# 1. Connect to MySQL Server
 try:
     db = mysql.connector.connect(
         host="localhost",
         user="root",
-        password=os.getenv("DB_PASSWORD")  # Safely pulls the password from .env
+        password=os.getenv("DB_PASSWORD"),
+        database="ipl_auction"
     )
     cursor = db.cursor()
 except mysql.connector.Error as err:
     print(f"Error connecting to MySQL: {err}")
     exit()
 
-print("1. Creating database ipl_auction...")
-cursor.execute("CREATE DATABASE IF NOT EXISTS ipl_auction;")
-cursor.execute("USE ipl_auction;")
+print("1. Tearing down old single-state database architecture...")
+# We must drop tables in reverse order of their dependencies
+cursor.execute("DROP TABLE IF EXISTS auction_players;")
+cursor.execute("DROP TABLE IF EXISTS auction_teams;")
+cursor.execute("DROP TABLE IF EXISTS auctions;")
+cursor.execute("DROP TABLE IF EXISTS players;")
+cursor.execute("DROP TABLE IF EXISTS teams;")       # The old table
+cursor.execute("DROP TABLE IF EXISTS franchises;")  # The new table
 
-# 2. CREATE TEAMS TABLE FIRST (The Parent)
-print("2. Creating teams table...")
+print("2. Building Multi-Session Architecture...")
+
+# TABLE 1: Master Franchises (Permanent)
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS teams (
+CREATE TABLE franchises (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    purse BIGINT DEFAULT 1200000000, 
-    squad_size INT DEFAULT 0,
-    overseas_count INT DEFAULT 0
+    name VARCHAR(255) NOT NULL UNIQUE
 );
 """)
 
-# Insert the 5 default teams (Using INSERT IGNORE to prevent duplicates if run twice)
-print("3. Registering the 5 franchise teams...")
-teams_data = [
-    ("Team Alpha",), ("Team Bravo",), ("Team Charlie",), 
-    ("Team Delta",), ("Team Echo",)
-]
-cursor.executemany("INSERT IGNORE INTO teams (name) VALUES (%s);", teams_data)
-
-# 3. CREATE PLAYERS TABLE SECOND (The Child)
-print("4. Creating players table...")
-
-# This safely deletes the broken table structure first
-cursor.execute("DROP TABLE IF EXISTS players;")
+# TABLE 2: Master Players (Permanent - No auction status here!)
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS players (
+CREATE TABLE players (
     id INT AUTO_INCREMENT PRIMARY KEY,
     display_name VARCHAR(255) NOT NULL,
     country VARCHAR(100),
     role VARCHAR(50),
     base_price BIGINT,
-    sold_price BIGINT DEFAULT NULL,  # <-- WE ADDED THIS LINE BACK
     batting_runs INT DEFAULT 0,
     batting_avg DECIMAL(5,2) DEFAULT 0.00,
     batting_strike_rate DECIMAL(5,2) DEFAULT 0.00,
@@ -62,18 +51,68 @@ CREATE TABLE IF NOT EXISTS players (
     bowling_avg DECIMAL(5,2) DEFAULT 0.00,
     bowling_strike_rate DECIMAL(5,2) DEFAULT 0.00,
     bowling_economy DECIMAL(4,2) DEFAULT 0.00,
-    career_highlight VARCHAR(500),
-    status VARCHAR(50) DEFAULT 'Available',
-    team_id INT DEFAULT NULL,
-    FOREIGN KEY (team_id) REFERENCES teams(id)
+    career_highlight VARCHAR(500)
 );
 """)
 
-# 4. Load the CSV Data
-csv_path = os.path.join('data', 'players.csv')
+# TABLE 3: Auctions (The "Save Files")
+cursor.execute("""
+CREATE TABLE auctions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'In Progress'
+);
+""")
 
+# TABLE 4: Auction Teams (Budgets for a specific game)
+cursor.execute("""
+CREATE TABLE auction_teams (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    auction_id INT,
+    franchise_id INT,
+    purse BIGINT DEFAULT 1000000000, 
+    squad_size INT DEFAULT 0,
+    FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+    FOREIGN KEY (franchise_id) REFERENCES franchises(id) ON DELETE CASCADE
+);
+""")
+
+# TABLE 5: Auction Players (Player status for a specific game)
+cursor.execute("""
+CREATE TABLE auction_players (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    auction_id INT,
+    player_id INT,
+    status VARCHAR(50) DEFAULT 'Available',
+    sold_price BIGINT DEFAULT NULL,
+    auction_team_id INT DEFAULT NULL,
+    FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+    FOREIGN KEY (auction_team_id) REFERENCES auction_teams(id) ON DELETE SET NULL
+);
+""")
+
+print("3. Registering the Master Franchise List...")
+franchises_data = [
+    ("YSS Town",), 
+    ("Rohit Royals",), 
+    ("Mohit Super Kings",), 
+    ("Franchise 4",), 
+    ("Franchise 5",),
+    ("Franchise 6",),
+    ("Franchise 7",),
+    ("Franchise 8",),
+    ("Franchise 9",),
+    ("Franchise 10",)
+]
+cursor.executemany("INSERT IGNORE INTO franchises (name) VALUES (%s);", franchises_data)
+db.commit()
+
+# 4. Load the CSV Data into the Master Pool
+csv_path = os.path.join('data', 'players.csv')
 if os.path.exists(csv_path):
-    print(f"5. Found dataset at {csv_path}. Loading players...")
+    print("4. Loading the 100-player Master Roster...")
     df = pd.read_csv(csv_path)
     
     insert_query = """
@@ -85,9 +124,6 @@ if os.path.exists(csv_path):
     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     """
     
-    # We clear the table first so we don't duplicate players if you re-run the script
-    cursor.execute("TRUNCATE TABLE players;")
-    
     for _, row in df.iterrows():
         values = (
             str(row['display_name']), str(row['country']), str(row['role']), int(row['base_price']),
@@ -98,9 +134,9 @@ if os.path.exists(csv_path):
         cursor.execute(insert_query, values)
         
     db.commit()
-    print(f"Success: Database fully built and loaded with {len(df)} players.")
+    print(f"Success: Database fully rebuilt. {len(df)} players loaded.")
 else:
-    print(f"Error: Could not find players.csv at path: {csv_path}. Make sure the file exists.")
+    print(f"Error: Could not find players.csv at {csv_path}")
 
 cursor.close()
 db.close()
