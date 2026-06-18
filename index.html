@@ -64,6 +64,7 @@
             <button class="btn-sold" onclick="sellPlayer()">🔨 SOLD</button>
             <button class="btn-unsold" onclick="unsoldPlayer()">❌ UNSOLD</button>
             <button style="background: #007bff;" onclick="fetchNextPlayer()">⏭️ Next Player</button>
+            <button id="undoBtn" style="background: #6c757d; display: none; color: white;" onclick="undoLast()">↩️ Undo Last</button>
         </div>
     </div>
 
@@ -75,7 +76,7 @@
 <script>
     let currentPlayer = null;
     let currentBid = 0;
-
+    let lastTransaction = null; // Tracks the most recent action for the Undo function
     // Format numbers nicely (e.g., 20000000 -> 2,00,00,000)
     const formatCurrency = (num) => new Intl.NumberFormat('en-IN').format(num);
 
@@ -183,9 +184,19 @@ async function loadTeams() {
         const result = await response.json();
         if (response.ok) {
             alert(`${currentPlayer.display_name} SOLD for ₹${formatCurrency(currentBid)}!`);
-            currentPlayer = null; // Clear the desk
-            loadTeams(); // Refresh budgets
-            fetchNextPlayer(); // Auto-pull next player
+            
+            // Save transaction details to memory
+            lastTransaction = {
+                player_id: currentPlayer.id,
+                was_sold: true,
+                team_id: parseInt(teamId),
+                final_price: currentBid
+            };
+            document.getElementById('undoBtn').style.display = 'inline-block';
+
+            currentPlayer = null; 
+            loadTeams(); 
+            fetchNextPlayer(); 
         } else {
             alert(`Error: ${result.error}`);
         }
@@ -195,17 +206,66 @@ async function loadTeams() {
     async function unsoldPlayer() {
         if (!currentPlayer) return alert("Please draw a player first!");
         
-        await fetch('http://127.0.0.1:5000/api/resolve-player', {
+        const response = await fetch('http://127.0.0.1:5000/api/resolve-player', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ player_id: currentPlayer.id, status: 'Unsold' })
         });
 
-        alert(`${currentPlayer.display_name} goes UNSOLD.`);
-        currentPlayer = null;
-        fetchNextPlayer();
+        if (response.ok) {
+            alert(`${currentPlayer.display_name} goes UNSOLD.`);
+            
+            // Save transaction details to memory
+            lastTransaction = {
+                player_id: currentPlayer.id,
+                was_sold: false
+            };
+            document.getElementById('undoBtn').style.display = 'inline-block';
+
+            currentPlayer = null;
+            fetchNextPlayer();
+        }
     }
 
+    
+    // 6. Undo the last transaction
+    async function undoLast() {
+        if (!lastTransaction) {
+            alert("No transaction history found!");
+            return;
+        }
+
+        const confirmUndo = confirm("Are you sure you want to undo the last action?");
+        if (!confirmUndo) return;
+
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/undo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lastTransaction)
+            });
+
+            if (response.ok) {
+                alert("Undo successful! The last player has been returned to the available pool.");
+                lastTransaction = null; 
+                document.getElementById('undoBtn').style.display = 'none'; 
+                loadTeams(); 
+            } else {
+                // Safely handle errors even if the server sends HTML instead of JSON
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const result = await response.json();
+                    alert(`Backend Error: ${result.error}`);
+                } else {
+                    alert(`Server returned HTTP ${response.status}. Check the VS Code terminal for the Python error.`);
+                }
+            }
+        } catch (error) {
+            console.error("Network/Parsing Error:", error);
+            alert("A critical error occurred. Check the browser console (F12) and the VS Code terminal.");
+        }
+    }
+    
     // Initialize the app when the page opens
     window.onload = loadTeams;
 </script>
