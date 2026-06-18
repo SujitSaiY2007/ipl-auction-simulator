@@ -17,15 +17,15 @@ except mysql.connector.Error as err:
     print(f"Error connecting to MySQL: {err}")
     exit()
 
-print("1. Tearing down old single-state database architecture...")
+print("1. Tearing down database for AI & Sudden Death Upgrades...")
 cursor.execute("DROP TABLE IF EXISTS auction_players;")
 cursor.execute("DROP TABLE IF EXISTS auction_teams;")
 cursor.execute("DROP TABLE IF EXISTS auctions;")
 cursor.execute("DROP TABLE IF EXISTS players;")
-cursor.execute("DROP TABLE IF EXISTS teams;")       
+cursor.execute("DROP TABLE IF EXISTS teams;")       # Legacy cleanup
 cursor.execute("DROP TABLE IF EXISTS franchises;")  
 
-print("2. Building Multi-Session Architecture...")
+print("2. Building AI-Ready Architecture...")
 
 # TABLE 1: Master Franchises 
 cursor.execute("""
@@ -54,17 +54,20 @@ CREATE TABLE players (
 );
 """)
 
-# TABLE 3: Auctions 
+# TABLE 3: Auctions (Upgraded with Pitch and Minimum Squad Rules)
 cursor.execute("""
 CREATE TABLE auctions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    pitch_type VARCHAR(50) DEFAULT 'Standard',
+    min_squad_size INT DEFAULT 15,
+    sudden_death_active BOOLEAN DEFAULT FALSE,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50) DEFAULT 'In Progress'
 );
 """)
 
-# TABLE 4: Auction Teams 
+# TABLE 4: Auction Teams (Upgraded for Sudden Death Tracking)
 cursor.execute("""
 CREATE TABLE auction_teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -72,6 +75,9 @@ CREATE TABLE auction_teams (
     franchise_id INT,
     purse BIGINT DEFAULT 1000000000, 
     squad_size INT DEFAULT 0,
+    is_finished BOOLEAN DEFAULT FALSE,
+    sudden_death_draws_left INT DEFAULT 0,
+    sudden_death_needs INT DEFAULT 0,
     FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
     FOREIGN KEY (franchise_id) REFERENCES franchises(id) ON DELETE CASCADE
 );
@@ -92,7 +98,6 @@ CREATE TABLE auction_players (
 );
 """)
 
-# Note: Step 3 (Franchise loading) was removed to ensure a blank slate!
 db.commit()
 
 # 4. Load the CSV Data into the Master Pool
@@ -120,7 +125,7 @@ if os.path.exists(csv_path):
         cursor.execute(insert_query, values)
         
     db.commit()
-    print(f"Success: Blank Database built. {len(df)} players loaded. 0 Franchises registered.")
+    print(f"Success: AI-Ready Blank Database built. {len(df)} players loaded. 0 Franchises registered.")
 else:
     print(f"Error: Could not find players.csv at {csv_path}")
 
