@@ -30,7 +30,7 @@ def get_active_auction_id(cursor):
 def get_lobby_data():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM franchises")
+    cursor.execute("SELECT * FROM franchises ORDER BY name ASC")
     franchises = cursor.fetchall()
     cursor.execute("SELECT * FROM auctions ORDER BY id DESC")
     auctions = cursor.fetchall()
@@ -38,11 +38,36 @@ def get_lobby_data():
     conn.close()
     return jsonify({"franchises": franchises, "auctions": auctions})
 
+@app.route('/api/franchises/add', methods=['POST'])
+def add_franchise():
+    """Permanently adds a new team to the master database."""
+    data = request.json
+    name = data.get('name')
+    if not name: return jsonify({"error": "Name is required"}), 400
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO franchises (name) VALUES (%s)", (name,))
+        conn.commit()
+        return jsonify({"message": "Franchise added!"})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": "Franchise may already exist."}), 400
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route('/api/lobby/new', methods=['POST'])
 def create_new_auction():
     data = request.json
     name = data.get('name', 'Custom Auction')
     franchise_ids = data.get('franchise_ids', [])
+    budget_cr = data.get('budget', 100)  # Default to 100 if empty
+    
+    # Convert Crores to absolute integer
+    starting_purse = int(budget_cr) * 10000000 
+
     if not franchise_ids: return jsonify({"error": "Select at least one franchise!"}), 400
 
     conn = get_db_connection()
@@ -52,8 +77,9 @@ def create_new_auction():
         cursor.execute("INSERT INTO auctions (name, status) VALUES (%s, 'In Progress')", (name,))
         auction_id = cursor.lastrowid
         
+        # Apply the custom budget to the selected teams
         for f_id in franchise_ids:
-            cursor.execute("INSERT INTO auction_teams (auction_id, franchise_id, purse, squad_size) VALUES (%s, %s, 1000000000, 0)", (auction_id, f_id))
+            cursor.execute("INSERT INTO auction_teams (auction_id, franchise_id, purse, squad_size) VALUES (%s, %s, %s, 0)", (auction_id, f_id, starting_purse))
             
         cursor.execute("SELECT id FROM players")
         players = cursor.fetchall()
@@ -82,6 +108,21 @@ def load_auction():
     conn.close()
     return jsonify({"message": "Auction Loaded successfully!"})
 
+@app.route('/api/lobby/delete', methods=['POST'])
+def delete_auction():
+    """Kills a saved game completely to free up space."""
+    data = request.json
+    auction_id = data.get('auction_id')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Due to 'ON DELETE CASCADE' in our DB schema, deleting the auction 
+    # automatically wipes all associated teams and player statuses!
+    cursor.execute("DELETE FROM auctions WHERE id = %s", (auction_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Game Deleted"})
+
 # ==========================================
 # AUCTION GAMEPLAY ROUTES
 # ==========================================
@@ -93,8 +134,10 @@ def get_teams():
     auction_id = get_active_auction_id(cursor)
     if not auction_id: return jsonify({"error": "No active auction"}), 400
         
+    # We dynamically calculate how much they've spent to figure out their starting budget for the progress bar!
     cursor.execute("""
-        SELECT at.id, f.name, at.purse, at.squad_size 
+        SELECT at.id, f.name, at.purse, at.squad_size,
+               (SELECT COALESCE(SUM(sold_price), 0) FROM auction_players WHERE auction_team_id = at.id) as spent
         FROM auction_teams at
         JOIN franchises f ON at.franchise_id = f.id
         WHERE at.auction_id = %s
@@ -121,7 +164,6 @@ def get_next_player():
     player = cursor.fetchone()
     cursor.close()
     conn.close()
-    
     if player: return jsonify(player)
     else: return jsonify({"error": "No more available players!"}), 404
 
@@ -194,15 +236,12 @@ def get_team_roster(team_id):
     conn.close()
     return jsonify(roster)
 
-# --- NEW ROUTE: Fetch the full pool for the sidebar ---
 @app.route('/api/pool', methods=['GET'])
 def get_player_pool():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     auction_id = get_active_auction_id(cursor)
-    
-    if not auction_id:
-        return jsonify([])
+    if not auction_id: return jsonify([])
 
     cursor.execute("""
         SELECT p.display_name, p.role, p.base_price, ap.status 
@@ -211,7 +250,6 @@ def get_player_pool():
         WHERE ap.auction_id = %s
         ORDER BY p.display_name ASC
     """, (auction_id,))
-    
     pool = cursor.fetchall()
     cursor.close()
     conn.close()

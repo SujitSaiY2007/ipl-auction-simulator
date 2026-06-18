@@ -12,17 +12,23 @@
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
         .lobby-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
-        .checkbox-list { max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 15px; background: white; border-radius: 5px; margin-bottom: 15px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .input-group input { flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        .btn-add { background: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        .checkbox-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 15px; background: white; border-radius: 5px; margin-bottom: 15px; }
         .checkbox-list label { display: block; margin-bottom: 8px; cursor: pointer; }
+        
         .save-file { background: white; border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
         .btn-launch { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-load { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        .btn-load { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-right: 5px;}
+        .btn-kill { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
 
-        /* 3-COLUMN DASHBOARD LAYOUT */
+        /* Dashboard Styles */
         .dashboard-layout { display: grid; grid-template-columns: 280px 1fr 320px; gap: 20px; height: 92vh; }
         .panel { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; overflow-y: auto; border: 1px solid #dee2e6; }
         
-        /* Left Panel: Player Pool */
+        /* Player Pool */
         .tab-buttons { display: flex; gap: 5px; margin-bottom: 15px; }
         .tab-btn { flex: 1; padding: 8px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; background: #e2e6ea; color: #495057; }
         .tab-btn.active { background: #007bff; color: white; }
@@ -32,7 +38,7 @@
         .badge.Available { background: #cce5ff; color: #004085; }
         .badge.Unsold { background: #f8d7da; color: #721c24; }
         
-        /* Center Panel: Bidding Stage */
+        /* Bidding Stage */
         .center-stage { display: flex; flex-direction: column; align-items: center; }
         .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
         .btn-quit { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
@@ -52,7 +58,7 @@
         .btn-next { background-color: #007bff; }
         .btn-undo { background-color: #6c757d; }
 
-        /* Right Panel: Live Budgets */
+        /* Live Budgets */
         .team-card-small { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #dee2e6; cursor: pointer; transition: background 0.2s; }
         .team-card-small:hover { background: #e2e6ea; }
         .team-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
@@ -67,22 +73,33 @@
     <h1 style="text-align: center;">🏏 IPL Simulator Lobby</h1>
     <div class="lobby-grid">
         <div class="lobby-panel">
-            <h3>Start New Game</h3>
-            <input type="text" id="newAuctionName" placeholder="Enter Session Name" style="width: 95%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc;">
-            <p><strong>Select Franchises:</strong></p>
+            <h3>1. Create Game Setup</h3>
+            <div class="input-group">
+                <input type="text" id="newAuctionName" placeholder="Enter Session Name">
+                <input type="number" id="customBudget" placeholder="Budget (in Crores)" value="100">
+            </div>
+
+            <h3>2. Manage Franchises</h3>
+            <div class="input-group">
+                <input type="text" id="newFranchiseName" placeholder="Enter New Team Name">
+                <button class="btn-add" onclick="addNewFranchise()">➕ Add to Database</button>
+            </div>
+            
+            <p><strong>Select Participating Teams:</strong> (Manually check who is playing)</p>
             <div id="franchiseCheckboxes" class="checkbox-list"></div>
+            
             <button class="btn-launch" onclick="createNewGame()">🚀 Launch New Auction</button>
         </div>
+        
         <div class="lobby-panel">
-            <h3>Resume Past Game</h3>
-            <div id="pastGamesList" style="height: 280px; overflow-y: auto;"></div>
+            <h3>Resume or Delete Past Games</h3>
+            <div id="pastGamesList" style="height: 400px; overflow-y: auto;"></div>
         </div>
     </div>
 </div>
 
 <div id="auction-screen" style="display: none;">
     <div class="dashboard-layout">
-        
         <div class="panel">
             <h3>📋 Player Pool</h3>
             <div class="tab-buttons">
@@ -133,7 +150,6 @@
             <h3>💼 Live Budgets</h3>
             <div id="teamsGrid"></div>
         </div>
-
     </div>
 </div>
 
@@ -141,12 +157,12 @@
     let currentPlayer = null;
     let currentBid = 0;
     let lastTransaction = null;
-    let fullPlayerPool = []; // Stores the background player pool data
+    let fullPlayerPool = []; 
 
     window.onload = loadLobby;
 
     function formatCurrency(amount) {
-        return "₹" + (amount / 10000000).toFixed(2) + " Cr"; // Changed format to show in Crores for sleekness
+        return "₹" + (amount / 10000000).toFixed(2) + " Cr"; 
     }
 
     // --- LOBBY LOGIC ---
@@ -156,29 +172,79 @@
         
         const checkList = document.getElementById('franchiseCheckboxes');
         checkList.innerHTML = '';
-        data.franchises.forEach(f => {
-            checkList.innerHTML += `<label><input type="checkbox" class="franchise-cb" value="${f.id}" checked> ${f.name}</label>`;
-        });
+        
+        // Smart Fallback: If no teams exist, show an instruction message
+        if (data.franchises.length === 0) {
+            checkList.innerHTML = `
+                <div style="text-align: center; color: #6c757d; margin-top: 15px;">
+                    <p>No franchises registered yet.</p>
+                    <p>Use the <strong>"Manage Franchises"</strong> input above to add your teams to the database!</p>
+                </div>`;
+        } else {
+            // If teams exist, render the checkboxes
+            data.franchises.forEach(f => {
+                checkList.innerHTML += `<label><input type="checkbox" class="franchise-cb" value="${f.id}"> ${f.name}</label>`;
+            });
+        }
 
         const gamesList = document.getElementById('pastGamesList');
         gamesList.innerHTML = '';
-        data.auctions.forEach(a => {
-            const status = a.status === 'In Progress' ? '🟢 Active' : '⚪ Paused';
-            gamesList.innerHTML += `
-                <div class="save-file">
-                    <div><strong>${a.name}</strong><br><small>${new Date(a.date_created).toLocaleDateString()} | ${status}</small></div>
-                    <button class="btn-load" onclick="resumeGame(${a.id}, '${a.name}')">Resume</button>
-                </div>`;
+        if (data.auctions.length === 0) {
+            gamesList.innerHTML = '<p style="text-align: center; color: gray; margin-top: 20px;">No saved games found.</p>';
+        } else {
+            data.auctions.forEach(a => {
+                const status = a.status === 'In Progress' ? '🟢 Active' : '⚪ Paused';
+                gamesList.innerHTML += `
+                    <div class="save-file">
+                        <div><strong>${a.name}</strong><br><small>${new Date(a.date_created).toLocaleDateString()} | ${status}</small></div>
+                        <div>
+                            <button class="btn-load" onclick="resumeGame(${a.id}, '${a.name}')">Resume</button>
+                            <button class="btn-kill" onclick="killGame(${a.id})">🗑️ Kill</button>
+                        </div>
+                    </div>`;
+            });
+        }
+    }
+
+    async function addNewFranchise() {
+        const nameInput = document.getElementById('newFranchiseName');
+        if (!nameInput.value) return alert("Enter a team name first!");
+        
+        const res = await fetch('http://127.0.0.1:5000/api/franchises/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: nameInput.value })
         });
+        
+        if (res.ok) {
+            nameInput.value = '';
+            loadLobby(); // Instantly refresh the checkbox list
+        } else {
+            alert("Failed to add. That team might already exist.");
+        }
+    }
+
+    async function killGame(auctionId) {
+        if(!confirm("Are you sure? This will permanently delete the game, all bids, and all rosters for this session.")) return;
+        
+        await fetch('http://127.0.0.1:5000/api/lobby/delete', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auction_id: auctionId })
+        });
+        loadLobby(); // Refresh the list
     }
 
     async function createNewGame() {
         const nameInput = document.getElementById('newAuctionName').value || 'Custom Session';
+        const budgetInput = document.getElementById('customBudget').value || 100;
         const checkboxes = document.querySelectorAll('.franchise-cb:checked');
         const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
         if (selectedIds.length === 0) return alert("Select at least one franchise!");
-        const res = await fetch('http://127.0.0.1:5000/api/lobby/new', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: nameInput, franchise_ids: selectedIds }) });
+        
+        const res = await fetch('http://127.0.0.1:5000/api/lobby/new', { 
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ name: nameInput, budget: budgetInput, franchise_ids: selectedIds }) 
+        });
 
         if (res.ok) { document.getElementById('activeAuctionTitle').innerText = `🏏 ${nameInput}`; transitionToAuction(); }
     }
@@ -191,12 +257,11 @@
     function transitionToAuction() {
         document.getElementById('lobby-screen').style.display = 'none';
         document.getElementById('auction-screen').style.display = 'block';
-        refreshDashboardData(); // Loads teams and the sidebar pool
+        refreshDashboardData(); 
         fetchNextPlayer();
     }
 
     // --- DASHBOARD DATA SYNC ---
-    // This master function refreshes all sidebars at once
     async function refreshDashboardData() {
         await loadTeams();
         await fetchPool();
@@ -211,16 +276,16 @@
         grid.innerHTML = '';
         select.innerHTML = '';
 
-        const MAX_BUDGET = 1000000000; // 100 Crore
-
         teams.forEach(team => {
             select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
             
-            // Calculate Progress Bar Logic
-            const percentLeft = (team.purse / MAX_BUDGET) * 100;
-            let barColor = '#28a745'; // Green
-            if (percentLeft < 35) barColor = '#ffc107'; // Yellow Warning
-            if (percentLeft < 15) barColor = '#dc3545'; // Red Danger
+            // Dynamically calculate the starting budget by combining what they have + what they spent
+            const startingBudget = Number(team.purse) + Number(team.spent);
+            const percentLeft = (team.purse / startingBudget) * 100;
+            
+            let barColor = '#28a745'; 
+            if (percentLeft < 35) barColor = '#ffc107'; 
+            if (percentLeft < 15) barColor = '#dc3545'; 
 
             const card = document.createElement('div');
             card.className = 'team-card-small';
@@ -243,13 +308,11 @@
     async function fetchPool() {
         const res = await fetch('http://127.0.0.1:5000/api/pool');
         fullPlayerPool = await res.json();
-        // Determine which tab is currently active and render it
         const activeTab = document.querySelector('.tab-btn.active').innerText;
         renderPool(activeTab);
     }
 
     function renderPool(statusFilter) {
-        // Update tab visuals
         document.getElementById('tab-Available').className = 'tab-btn' + (statusFilter === 'Available' ? ' active' : '');
         document.getElementById('tab-Unsold').className = 'tab-btn' + (statusFilter === 'Unsold' ? ' active' : '');
 
@@ -303,7 +366,7 @@
             lastTransaction = { player_id: currentPlayer.id, was_sold: true, team_id: parseInt(teamId), final_price: currentBid };
             document.getElementById('undoBtn').style.display = 'inline-block';
             currentPlayer = null; 
-            refreshDashboardData(); // Updates Sidebar Lists and Budget Bars instantly
+            refreshDashboardData(); 
             fetchNextPlayer(); 
         } else {
             const data = await res.json(); alert(`Error: ${data.error}`);
@@ -318,7 +381,7 @@
             lastTransaction = { player_id: currentPlayer.id, was_sold: false };
             document.getElementById('undoBtn').style.display = 'inline-block';
             currentPlayer = null;
-            refreshDashboardData(); // Instantly moves player to Unsold tab
+            refreshDashboardData(); 
             fetchNextPlayer();
         }
     }
@@ -330,7 +393,7 @@
         if (res.ok) {
             lastTransaction = null; 
             document.getElementById('undoBtn').style.display = 'none'; 
-            refreshDashboardData(); // Refunds money, adjusts bars, puts player back in Available tab
+            refreshDashboardData(); 
         }
     }
 

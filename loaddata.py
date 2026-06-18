@@ -18,17 +18,16 @@ except mysql.connector.Error as err:
     exit()
 
 print("1. Tearing down old single-state database architecture...")
-# We must drop tables in reverse order of their dependencies
 cursor.execute("DROP TABLE IF EXISTS auction_players;")
 cursor.execute("DROP TABLE IF EXISTS auction_teams;")
 cursor.execute("DROP TABLE IF EXISTS auctions;")
 cursor.execute("DROP TABLE IF EXISTS players;")
-cursor.execute("DROP TABLE IF EXISTS teams;")       # The old table
-cursor.execute("DROP TABLE IF EXISTS franchises;")  # The new table
+cursor.execute("DROP TABLE IF EXISTS teams;")       
+cursor.execute("DROP TABLE IF EXISTS franchises;")  
 
 print("2. Building Multi-Session Architecture...")
 
-# TABLE 1: Master Franchises (Permanent)
+# TABLE 1: Master Franchises 
 cursor.execute("""
 CREATE TABLE franchises (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,7 +35,7 @@ CREATE TABLE franchises (
 );
 """)
 
-# TABLE 2: Master Players (Permanent - No auction status here!)
+# TABLE 2: Master Players
 cursor.execute("""
 CREATE TABLE players (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -55,7 +54,7 @@ CREATE TABLE players (
 );
 """)
 
-# TABLE 3: Auctions (The "Save Files")
+# TABLE 3: Auctions 
 cursor.execute("""
 CREATE TABLE auctions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,7 +64,7 @@ CREATE TABLE auctions (
 );
 """)
 
-# TABLE 4: Auction Teams (Budgets for a specific game)
+# TABLE 4: Auction Teams 
 cursor.execute("""
 CREATE TABLE auction_teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,7 +77,7 @@ CREATE TABLE auction_teams (
 );
 """)
 
-# TABLE 5: Auction Players (Player status for a specific game)
+# TABLE 5: Auction Players
 cursor.execute("""
 CREATE TABLE auction_players (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -93,26 +92,13 @@ CREATE TABLE auction_players (
 );
 """)
 
-print("3. Registering the Master Franchise List...")
-franchises_data = [
-    ("YSS Town",), 
-    ("Rohit Royals",), 
-    ("Mohit Super Kings",), 
-    ("Franchise 4",), 
-    ("Franchise 5",),
-    ("Franchise 6",),
-    ("Franchise 7",),
-    ("Franchise 8",),
-    ("Franchise 9",),
-    ("Franchise 10",)
-]
-cursor.executemany("INSERT IGNORE INTO franchises (name) VALUES (%s);", franchises_data)
+# Note: Step 3 (Franchise loading) was removed to ensure a blank slate!
 db.commit()
 
 # 4. Load the CSV Data into the Master Pool
 csv_path = os.path.join('data', 'players.csv')
 if os.path.exists(csv_path):
-    print("4. Loading the 100-player Master Roster...")
+    print("3. Loading the 100-player Master Roster...")
     df = pd.read_csv(csv_path)
     
     insert_query = """
@@ -134,7 +120,7 @@ if os.path.exists(csv_path):
         cursor.execute(insert_query, values)
         
     db.commit()
-    print(f"Success: Database fully rebuilt. {len(df)} players loaded.")
+    print(f"Success: Blank Database built. {len(df)} players loaded. 0 Franchises registered.")
 else:
     print(f"Error: Could not find players.csv at {csv_path}")
 
