@@ -18,57 +18,43 @@ def get_db_connection():
     )
 
 def get_active_auction_id(cursor):
-    """Finds the currently active game session."""
     cursor.execute("SELECT id FROM auctions WHERE status = 'In Progress' ORDER BY id DESC LIMIT 1")
     auction = cursor.fetchone()
     return auction['id'] if auction else None
 
 # ==========================================
-# LOBBY & GAME MANAGEMENT ROUTES (NEW)
+# LOBBY & GAME MANAGEMENT ROUTES
 # ==========================================
 
 @app.route('/api/lobby/data', methods=['GET'])
 def get_lobby_data():
-    """Fetches master franchises and past save files for the Lobby."""
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    
     cursor.execute("SELECT * FROM franchises")
     franchises = cursor.fetchall()
-    
     cursor.execute("SELECT * FROM auctions ORDER BY id DESC")
     auctions = cursor.fetchall()
-    
     cursor.close()
     conn.close()
     return jsonify({"franchises": franchises, "auctions": auctions})
 
 @app.route('/api/lobby/new', methods=['POST'])
 def create_new_auction():
-    """Creates a fresh game save and populates it with selected franchises."""
     data = request.json
     name = data.get('name', 'Custom Auction')
     franchise_ids = data.get('franchise_ids', [])
-
-    if not franchise_ids:
-        return jsonify({"error": "You must select at least one franchise!"}), 400
+    if not franchise_ids: return jsonify({"error": "Select at least one franchise!"}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
     try:
-        # 1. Pause any currently active games
         cursor.execute("UPDATE auctions SET status = 'Paused'")
-        
-        # 2. Create the new game session
         cursor.execute("INSERT INTO auctions (name, status) VALUES (%s, 'In Progress')", (name,))
         auction_id = cursor.lastrowid
         
-        # 3. Pull ONLY the selected franchises into this game with a 100 Cr purse
         for f_id in franchise_ids:
             cursor.execute("INSERT INTO auction_teams (auction_id, franchise_id, purse, squad_size) VALUES (%s, %s, 1000000000, 0)", (auction_id, f_id))
             
-        # 4. Pull the master 100-player roster into this game
         cursor.execute("SELECT id FROM players")
         players = cursor.fetchall()
         for p in players:
@@ -85,10 +71,8 @@ def create_new_auction():
 
 @app.route('/api/lobby/load', methods=['POST'])
 def load_auction():
-    """Pauses the current game and resumes an older save file."""
     data = request.json
     auction_id = data.get('auction_id')
-    
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("UPDATE auctions SET status = 'Paused'")
@@ -107,8 +91,7 @@ def get_teams():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     auction_id = get_active_auction_id(cursor)
-    if not auction_id:
-        return jsonify({"error": "No active auction"}), 400
+    if not auction_id: return jsonify({"error": "No active auction"}), 400
         
     cursor.execute("""
         SELECT at.id, f.name, at.purse, at.squad_size 
@@ -139,10 +122,8 @@ def get_next_player():
     cursor.close()
     conn.close()
     
-    if player:
-        return jsonify(player)
-    else:
-        return jsonify({"error": "No more available players!"}), 404
+    if player: return jsonify(player)
+    else: return jsonify({"error": "No more available players!"}), 404
 
 @app.route('/api/resolve-player', methods=['POST'])
 def resolve_player():
@@ -212,6 +193,29 @@ def get_team_roster(team_id):
     cursor.close()
     conn.close()
     return jsonify(roster)
+
+# --- NEW ROUTE: Fetch the full pool for the sidebar ---
+@app.route('/api/pool', methods=['GET'])
+def get_player_pool():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    auction_id = get_active_auction_id(cursor)
+    
+    if not auction_id:
+        return jsonify([])
+
+    cursor.execute("""
+        SELECT p.display_name, p.role, p.base_price, ap.status 
+        FROM auction_players ap
+        JOIN players p ON ap.player_id = p.id
+        WHERE ap.auction_id = %s
+        ORDER BY p.display_name ASC
+    """, (auction_id,))
+    
+    pool = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(pool)
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
