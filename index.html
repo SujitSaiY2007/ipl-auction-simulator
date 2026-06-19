@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate IPL Esports Simulator</title>
+    <meta name="google-site-verification" content="google09a1e5987201e20f" />
+    <title>🏏 Ultimate IPL Esports Simulator | Live AI Mock Drafts</title>
+    <meta name="description" content="Experience the ultimate real-time IPL auction simulator. Manage franchise budgets, leverage dynamic AI insights, survive sudden death rounds, and build your perfect playing XI.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -33,7 +35,7 @@
         .dashboard-layout { display: grid; grid-template-columns: 280px 1fr 320px; gap: 20px; height: 90vh; }
         
         .flex-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-        .scrollable-content { flex: 1; overflow-y: auto; padding-right: 5px; }
+        .scrollable-content { flex: 1; overflow-y: auto; padding-right: 5px; min-height: 200px; }
         
         .ai-card { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 15px; position: relative; min-height: 250px; display: flex; flex-direction: column; justify-content: center;}
         
@@ -302,7 +304,6 @@
     let xiBuildingQueue = []; 
     let currentXITeamIndex = 0;
 
-    // AUTOMATED GATEWAY ROUTER: Intelligently switches endpoints between Localhost and Cloud
     const API_BASE = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
         ? 'http://127.0.0.1:5000' 
         : 'https://sujitsaiy.pythonanywhere.com';
@@ -321,7 +322,6 @@
         setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
-    // Direct network gateway utility ensuring all tracking targets hit the right host system
     async function safeFetch(url, options = {}) {
         const targetUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
         try {
@@ -463,10 +463,10 @@
         }
 
         const ratio = currentBid / currentPlayer.true_value;
-        if (ratio < 0.6) { adviceEl.innerHTML = `🔥 <strong>Absolute Steal!</strong> AI Value: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--success)"; } 
-        else if (ratio <= 1.0) { adviceEl.innerHTML = `✅ <strong>Fair Price.</strong> AI Value: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--info)"; } 
-        else if (ratio <= 1.5) { adviceEl.innerHTML = `⚠️ <strong>Bidding War.</strong> AI Value: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "#d35400"; } 
-        else { adviceEl.innerHTML = `🚨 <strong>Overpaid!</strong> AI Value: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--danger)"; }
+        if (ratio < 0.6) { adviceEl.innerHTML = `🔥 <strong>Absolute Value Pick!</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--success)"; } 
+        else if (ratio <= 1.0) { adviceEl.innerHTML = `✅ <strong>Fair Price.</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--info)"; } 
+        else if (ratio <= 1.5) { adviceEl.innerHTML = `⚠️ <strong>Bidding War Inflation.</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "#d35400"; } 
+        else { adviceEl.innerHTML = `🚨 <strong>Overpaid Purchase!</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--danger)"; }
     }
 
     async function updateLiveHighlights() {
@@ -496,17 +496,16 @@
         } catch(e) {}
     }
 
+    // CRASH PROTECTION LAYER: Isolate the inventory pool from session initialization blocks
     async function syncDashboard() {
-        // Core Isolation Layer: Load the player pool inventory independently first
         try {
             const poolRes = await safeFetch('/api/pool');
             fullPlayerPool = await poolRes.json();
             renderPool('Available');
         } catch(poolErr) {
-            console.log("Waiting for database engine initialization to compile pool rows.");
+            console.log("Awaiting connection initialization to map inventory pool nodes.");
         }
 
-        // Session Layer: Load active team budgets and dynamic interactive nodes
         try {
             const res = await safeFetch('/api/teams');
             const packet = await res.json();
@@ -548,9 +547,7 @@
             });
             
             updateLiveHighlights();
-        } catch(e) {
-            console.log("Dashboard sync kept stable while waiting for active session initialization.");
-        }
+        } catch(e) {}
     }
 
     function renderPool(status) {
