@@ -497,6 +497,16 @@
     }
 
     async function syncDashboard() {
+        // Core Isolation Layer: Load the player pool inventory independently first
+        try {
+            const poolRes = await safeFetch('/api/pool');
+            fullPlayerPool = await poolRes.json();
+            renderPool('Available');
+        } catch(poolErr) {
+            console.log("Waiting for database engine initialization to compile pool rows.");
+        }
+
+        // Session Layer: Load active team budgets and dynamic interactive nodes
         try {
             const res = await safeFetch('/api/teams');
             const packet = await res.json();
@@ -538,11 +548,9 @@
             });
             
             updateLiveHighlights();
-            
-            const poolRes = await safeFetch('/api/pool');
-            fullPlayerPool = await poolRes.json();
-            renderPool('Available');
-        } catch(e) {}
+        } catch(e) {
+            console.log("Dashboard sync kept stable while waiting for active session initialization.");
+        }
     }
 
     function renderPool(status) {
