@@ -336,7 +336,7 @@
 
     async function loadLobby() {
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/lobby/data');
+            const res = await safeFetch('https://sujitsaiy.pythonanywhere.com/api/lobby/data');
             const data = await res.json();
             const checkList = document.getElementById('franchiseCheckboxes');
             checkList.innerHTML = data.franchises.map(f => `
@@ -363,19 +363,19 @@
     async function addNewFranchise() {
         const name = document.getElementById('newFranchiseName').value;
         if (!name) return showToast("Enter a name!", "error");
-        await safeFetch('http://127.0.0.1:5000/api/franchises/add', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+        await safeFetch('/api/franchises/add', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name}) });
         document.getElementById('newFranchiseName').value = ''; loadLobby(); showToast("Franchise Added!", "success");
     }
 
     async function deleteFranchise(id) {
         if(!confirm("Permanently delete?")) return;
-        await safeFetch('http://127.0.0.1:5000/api/franchises/delete', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({franchise_id: id}) });
+        await safeFetch('/api/franchises/delete', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({franchise_id: id}) });
         loadLobby(); showToast("Deleted", "warning");
     }
 
     async function killGame(id) {
         if(!confirm("Delete this game session?")) return;
-        await safeFetch('http://127.0.0.1:5000/api/lobby/delete', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({auction_id: id}) });
+        await safeFetch('/api/lobby/delete', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({auction_id: id}) });
         loadLobby();
     }
 
@@ -393,7 +393,7 @@
             const selectedIds = Array.from(document.querySelectorAll('.franchise-cb:checked')).map(cb => parseInt(cb.value));
             if (selectedIds.length === 0) return showToast("Select teams!", "error");
 
-            await safeFetch('http://127.0.0.1:5000/api/lobby/new', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, budget, pitch_type: document.getElementById('pitchType').value, min_squad_size: minSize, timer_seconds: timer, franchise_ids: selectedIds}) });
+            await safeFetch('/api/lobby/new', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, budget, pitch_type: document.getElementById('pitchType').value, min_squad_size: minSize, timer_seconds: timer, franchise_ids: selectedIds}) });
             
             document.getElementById('activeAuctionTitle').innerText = name; 
             transitionToAuction();
@@ -402,7 +402,7 @@
 
     async function resumeGame(id, name) {
         try {
-            await safeFetch('http://127.0.0.1:5000/api/lobby/load', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({auction_id: id}) });
+            await safeFetch('/api/lobby/load', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({auction_id: id}) });
             document.getElementById('activeAuctionTitle').innerText = name; 
             transitionToAuction();
         } catch (e) {}
@@ -471,7 +471,7 @@
 
     async function updateLiveHighlights() {
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/live-highlights');
+            const res = await safeFetch('/api/live-highlights');
             const data = await res.json();
             const panel = document.getElementById('highlightsContent');
             if (!data.highest) { panel.innerHTML = "<span style='color:gray;'>No players sold yet.</span>"; return; }
@@ -498,7 +498,7 @@
 
     async function syncDashboard() {
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/teams');
+            const res = await safeFetch('/api/teams');
             const packet = await res.json();
             globalMeta = packet.meta;
             
@@ -540,7 +540,7 @@
             
             updateLiveHighlights();
             
-            const poolRes = await safeFetch('http://127.0.0.1:5000/api/pool');
+            const poolRes = await safeFetch('/api/pool');
             fullPlayerPool = await poolRes.json();
             renderPool('Available');
         } catch(e) {}
@@ -567,7 +567,7 @@
 
     async function fetchNextPlayer() {
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/next-player');
+            const res = await safeFetch('/api/next-player');
             const data = await res.json();
             currentPlayer = data.player;
             activeBiddingTeam = null; 
@@ -627,7 +627,7 @@
         if (!currentPlayer) return;
         if (!activeBiddingTeam) return showToast("Select a Team Node first!", "error");
         try {
-            await safeFetch('http://127.0.0.1:5000/api/resolve-player', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({player_id: currentPlayer.auction_player_id, status: 'Sold', team_id: activeBiddingTeam, final_price: currentBid})});
+            await safeFetch('/api/resolve-player', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({player_id: currentPlayer.auction_player_id, status: 'Sold', team_id: activeBiddingTeam, final_price: currentBid})});
             lastTransaction = {player_id: currentPlayer.auction_player_id, was_sold:true, team_id: activeBiddingTeam, final_price: currentBid};
             document.getElementById('undoBtn').style.display = 'inline-block';
             showToast(`${currentPlayer.display_name} SOLD!`, "success");
@@ -639,7 +639,7 @@
         if (!currentPlayer) return;
         const teamId = globalMeta.sudden_death_active ? activeBiddingTeam : null;
         try {
-            await safeFetch('http://127.0.0.1:5000/api/resolve-player', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({player_id: currentPlayer.auction_player_id, status: 'Unsold', team_id: teamId})});
+            await safeFetch('/api/resolve-player', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({player_id: currentPlayer.auction_player_id, status: 'Unsold', team_id: teamId})});
             lastTransaction = {player_id: currentPlayer.auction_player_id, was_sold:false};
             document.getElementById('undoBtn').style.display = 'inline-block';
             showToast("Player Unsold", "error");
@@ -649,7 +649,7 @@
 
     async function undoLast() {
         if(!lastTransaction) return;
-        await safeFetch('http://127.0.0.1:5000/api/undo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(lastTransaction)});
+        await safeFetch('/api/undo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(lastTransaction)});
         lastTransaction = null; document.getElementById('undoBtn').style.display = 'none'; syncDashboard(); 
         isBiddingLocked = false; document.getElementById('bidBtnsContainer').style.opacity = '1'; showToast("Undo Successful");
     }
@@ -658,7 +658,7 @@
         if(!confirm("Conclude Draft and Build Playing XIs?")) return;
         clearInterval(timerInterval);
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/teams');
+            const res = await safeFetch('/api/teams');
             const data = await res.json();
             xiBuildingQueue = data.teams;
             currentXITeamIndex = 0;
@@ -673,7 +673,7 @@
         document.getElementById('xiCount').innerText = '0';
         document.getElementById('xiOverseas').innerText = '0';
         
-        const rosterRes = await safeFetch(`http://127.0.0.1:5000/api/roster/${team.id}`);
+        const rosterRes = await safeFetch(`/api/roster/${team.id}`);
         const roster = await rosterRes.json();
         
         xiSelections[team.id] = []; 
@@ -718,7 +718,7 @@
 
     async function finalizeAndCrown() {
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/auctions/finish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({xi_data: xiSelections})});
+            const res = await safeFetch('/api/auctions/finish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({xi_data: xiSelections})});
             const data = await res.json();
             
             document.getElementById('scorecardContainer').innerHTML = data.rankings.map((r, i) => {
@@ -749,7 +749,7 @@
 
     async function openHallOfFame() {
         try {
-            const res = await safeFetch('http://127.0.0.1:5000/api/franchises/history');
+            const res = await safeFetch('/api/franchises/history');
             const history = await res.json();
             document.getElementById('hofTableBody').innerHTML = history.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:15px;">No data.</td></tr>' : history.map((h,i) => `
                 <tr style="border-bottom: 1px solid #eee;">
@@ -766,7 +766,7 @@
 
     async function viewPastSquads(f_id, name) {
         try {
-            const res = await safeFetch(`http://127.0.0.1:5000/api/franchises/past-squads/${f_id}`);
+            const res = await safeFetch(`/api/franchises/past-squads/${f_id}`);
             const seasons = await res.json();
             if(seasons.length === 0) return showToast("No completed squads found.", "warning");
             
@@ -795,7 +795,7 @@
 
     async function viewLiveRoster(teamId, teamName) {
         try {
-            const res = await safeFetch(`http://127.0.0.1:5000/api/roster/${teamId}`);
+            const res = await safeFetch(`/api/roster/${teamId}`);
             const roster = await res.json();
             
             document.getElementById('liveRosterTeamName').innerText = `${teamName} Current Roster`;
@@ -812,7 +812,7 @@
 
     async function openSeasonDetails(auctionId, auctionName) {
         try {
-            const res = await safeFetch(`http://127.0.0.1:5000/api/auctions/${auctionId}/details`);
+            const res = await safeFetch(`/api/auctions/${auctionId}/details`);
             const data = await res.json();
             
             document.getElementById('seasonDetailsTitle').innerText = `${auctionName} - Breakdown`;
