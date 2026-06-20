@@ -304,6 +304,13 @@
     let xiBuildingQueue = []; 
     let currentXITeamIndex = 0;
 
+    // 🌟 IDENTITY GENERATOR: Creates a unique signature for this browser session if it doesn't exist
+    if (!localStorage.getItem('ipl_user_token')) {
+        const uniqueToken = 'usr_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        localStorage.setItem('ipl_user_token', uniqueToken);
+    }
+    const USER_TOKEN = localStorage.getItem('ipl_user_token');
+
     const API_BASE = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
         ? 'http://127.0.0.1:5000' 
         : 'https://sujitsaiy.pythonanywhere.com';
@@ -322,8 +329,17 @@
         setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
+    // 🌟 UPDATED NETWORK GATEWAY: Automatically stamps the user's token onto the request headers
     async function safeFetch(url, options = {}) {
         const targetUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+        
+        // Ensure options.headers exists
+        if (!options.headers) {
+            options.headers = {};
+        }
+        // Inject the user's isolated sandbox token
+        options.headers['X-User-Token'] = USER_TOKEN;
+
         try {
             const res = await fetch(targetUrl, options);
             if (!res.ok) {

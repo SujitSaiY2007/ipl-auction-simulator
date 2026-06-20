@@ -1,17 +1,46 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
 import sqlite3
 import math
 import traceback
 import os
+import shutil
 
 app = Flask(__name__)
 CORS(app)
 
+# Define paths for sandbox isolation
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SANDBOX_DIR = os.path.join(BASE_DIR, "sandboxes")
+MASTER_TEMPLATE = os.path.join(BASE_DIR, "ipl_auction.db")
+
 # FIXED: Replaced MySQL network engine with direct SQLite file access
 def get_db_connection():
-    conn = sqlite3.connect("ipl_auction.db")
-    # This automatically maps table rows into column key/value dictionaries
+    """
+    Dynamically routes the database connection to an isolated file 
+    belonging exclusively to the requesting browser token.
+    """
+    # 1. Extract the unique tracking token sent by the browser front-end
+    user_token = request.headers.get('X-User-Token', 'default_guest')
+    
+    # Sanitize token input to safeguard against malicious path traversal attempts
+    user_token = "".join([c for c in user_token if c.isalnum() or c in ('_', '-')])
+    
+    # 2. Build the target path for this user's private sandbox file
+    user_db_filename = f"{user_token}.db"
+    user_db_path = os.path.join(SANDBOX_DIR, user_db_filename)
+    
+    # 3. If this user has never visited before, instantly clone a fresh copy from the master template
+    if not os.path.exists(user_db_path):
+        os.makedirs(SANDBOX_DIR, exist_ok=True)
+        if os.path.exists(MASTER_TEMPLATE):
+            shutil.copy(MASTER_TEMPLATE, user_db_path)
+        else:
+            # Fallback if master template isn't compiled yet
+            raise FileNotFoundError("Master template database 'ipl_auction.db' not found. Run loaddata.py first!")
+
+    # 4. Open the connection directly to the isolated file instance
+    conn = sqlite3.connect(user_db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
