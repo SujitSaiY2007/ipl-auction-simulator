@@ -296,6 +296,7 @@
 
 <script>
     let currentPlayer = null, currentBid = 0, lastTransaction = null, fullPlayerPool = []; 
+    let globalTeams=[];
     let globalMeta = null, hasSeenSDAlert = false;
     let timerInterval, timeLeft = 60, activeBiddingTeam = null;
     let isBiddingLocked = false; 
@@ -473,16 +474,26 @@
         const adviceEl = document.getElementById('dynamicAiInsight');
         
         if (!isBiddingLocked) {
-            adviceEl.innerHTML = "⏳ <strong>Bidding Active...</strong> AI evaluation is hidden.";
+            // Dynamic commentary based on specific player archetypes while timer ticks
+            if (currentPlayer.role.includes('All-Rounder')) {
+                adviceEl.innerHTML = `⚡ <strong>Tactical Valuation:</strong> High demand multi-tool asset. Clears out late-game structural deficits.`;
+            } else if (currentPlayer.batting_strike_rate > 145) {
+                adviceEl.innerHTML = `💥 <strong>Tactical Valuation:</strong> Elite finisher matrix detected. High premium volatility expected.`;
+            } else if (currentPlayer.bowling_economy && currentPlayer.bowling_economy < 7.5) {
+                adviceEl.innerHTML = `🎯 <strong>Tactical Valuation:</strong> Defensive engine anchor. Excellent target for standard pitch variations.`;
+            } else {
+                adviceEl.innerHTML = "⏳ <strong>Bidding Active...</strong> Core operational data locked until countdown completion.";
+            }
             adviceEl.style.color = "var(--text-muted)";
             return;
         }
 
+        // Post-Timer Evaluation Matrix
         const ratio = currentBid / currentPlayer.true_value;
-        if (ratio < 0.6) { adviceEl.innerHTML = `🔥 <strong>Absolute Value Pick!</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--success)"; } 
-        else if (ratio <= 1.0) { adviceEl.innerHTML = `✅ <strong>Fair Price.</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--info)"; } 
-        else if (ratio <= 1.5) { adviceEl.innerHTML = `⚠️ <strong>Bidding War Inflation.</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "#d35400"; } 
-        else { adviceEl.innerHTML = `🚨 <strong>Overpaid Purchase!</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--danger)"; }
+        if (ratio < 0.6) { adviceEl.innerHTML = `🔥 <strong>Absolute Value Pick!</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)} | Trait: ${currentPlayer.career_highlight}`; adviceEl.style.color = "var(--success)"; } 
+        else if (ratio <= 1.0) { adviceEl.innerHTML = `== <strong>Fair Price Realized.</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--info)"; } 
+        else if (ratio <= 1.5) { adviceEl.innerHTML = `⚠️ <strong>Bidding War Inflation.</strong> Paid premium overhead for: "${currentPlayer.career_highlight}"`; adviceEl.style.color = "#d35400"; } 
+        else { adviceEl.innerHTML = `🚨 <strong>Overpaid Purchase!</strong> Capital efficiency compromised by ${((ratio - 1) * 100).toFixed(0)}%. Market value was ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--danger)"; }
     }
 
     async function updateLiveHighlights() {
@@ -526,7 +537,8 @@
             const res = await safeFetch('/api/teams');
             const packet = await res.json();
             globalMeta = packet.meta;
-            
+            globalTeams = packet.teams; // 🌟 Cache the live team metrics
+
             const gridContainer = document.getElementById('interactiveTeamGrid');
             gridContainer.innerHTML = '';
             packet.teams.forEach(t => {
@@ -637,6 +649,25 @@
     async function sellPlayer() {
         if (!currentPlayer) return;
         if (!activeBiddingTeam) return showToast("Select a Team Node first!", "error");
+        
+        // Find the active team's live financial data
+        const targetTeam = globalTeams.find(t => t.id === activeBiddingTeam);
+        if (!targetTeam) return;
+
+        // 🧠 ALGORITHMIC FINANCIAL RUNWAY CHECK
+        const formattingPurse = targetTeam.purse;
+        const requiredRemainingSlots = Math.max(0, globalMeta.min_squad_size - (targetTeam.squad_size + 1));
+        const absoluteMinimumReserve = requiredRemainingSlots * 2000000; // ₹20 Lakhs per missing slot
+        
+        if (currentBid > formattingPurse) {
+            return showToast(`❌ Illegal Bid! ${targetTeam.name} only has ${formatCurrency(formattingPurse)} left.`, "error");
+        }
+        
+        if ((formattingPurse - currentBid) < absoluteMinimumReserve) {
+            const maxAllowedBid = formattingPurse - absoluteMinimumReserve;
+            return showToast(`🚨 Bankrupt Warning! ${targetTeam.name} needs to reserve at least ${formatCurrency(absoluteMinimumReserve)} to fill out remaining ${requiredRemainingSlots} squad slots. Max safe bid is ${formatCurrency(maxAllowedBid)}.`, "warning");
+        }
+
         try {
             await safeFetch('/api/resolve-player', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({player_id: currentPlayer.auction_player_id, status: 'Sold', team_id: activeBiddingTeam, final_price: currentBid})});
             lastTransaction = {player_id: currentPlayer.auction_player_id, was_sold:true, team_id: activeBiddingTeam, final_price: currentBid};
