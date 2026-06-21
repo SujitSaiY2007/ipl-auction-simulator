@@ -5,6 +5,8 @@ import math
 import traceback
 import os
 import shutil
+import random
+import string
 
 app = Flask(__name__)
 CORS(app)
@@ -13,36 +15,62 @@ CORS(app)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SANDBOX_DIR = os.path.join(BASE_DIR, "sandboxes")
 MASTER_TEMPLATE = os.path.join(BASE_DIR, "ipl_auction.db")
+ROOMS_DIR = os.path.join(BASE_DIR, "rooms")  # 🌟 New directory for multiplayer rooms
 
-# FIXED: Replaced MySQL network engine with direct SQLite file access
+
 def get_db_connection():
     """
-    Dynamically routes the database connection to an isolated file 
-    belonging exclusively to the requesting browser token.
+    Dynamically routes traffic. Checks if a multiplayer room code header exists.
+    If yes, links to the shared room DB. If no, falls back to the personal sandbox DB.
     """
-    # 1. Extract the unique tracking token sent by the browser front-end
-    user_token = request.headers.get('X-User-Token', 'default_guest')
-    
-    # Sanitize token input to safeguard against malicious path traversal attempts
-    user_token = "".join([c for c in user_token if c.isalnum() or c in ('_', '-')])
-    
-    # 2. Build the target path for this user's private sandbox file
-    user_db_filename = f"{user_token}.db"
-    user_db_path = os.path.join(SANDBOX_DIR, user_db_filename)
-    
-    # 3. If this user has never visited before, instantly clone a fresh copy from the master template
-    if not os.path.exists(user_db_path):
-        os.makedirs(SANDBOX_DIR, exist_ok=True)
-        if os.path.exists(MASTER_TEMPLATE):
-            shutil.copy(MASTER_TEMPLATE, user_db_path)
-        else:
-            # Fallback if master template isn't compiled yet
-            raise FileNotFoundError("Master template database 'ipl_auction.db' not found. Run loaddata.py first!")
+    room_code = request.headers.get('X-Room-Code')
 
-    # 4. Open the connection directly to the isolated file instance
-    conn = sqlite3.connect(user_db_path)
+    if room_code and room_code.strip():
+        # 👥 MULTIPLAYER TRACK
+        room_code = "".join([c for c in room_code if c.isalnum()]).upper()[:4]
+        db_path = os.path.join(ROOMS_DIR, f"{room_code}.db")
+        if not os.path.exists(db_path):
+            raise FileNotFoundError(f"Room {room_code} does not exist or has expired.")
+    else:
+        # 🕹️ SINGLE-PLAYER SANDBOX TRACK
+        user_token = request.headers.get('X-User-Token', 'default_guest')
+        user_token = "".join([c for c in user_token if c.isalnum() or c in ('_', '-')])
+        db_path = os.path.join(SANDBOX_DIR, f"{user_token}.db")
+        
+        if not os.path.exists(db_path):
+            os.makedirs(SANDBOX_DIR, exist_ok=True)
+            shutil.copy(MASTER_TEMPLATE, db_path)
+
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
+
+# 🌟 NEW ENDPOINT: Create a shared room database instance
+@app.route('/api/create-room', methods=['POST'])
+def create_room():
+    try:
+        os.makedirs(ROOMS_DIR, exist_ok=True)
+        # Generate a unique, non-clashing 4-letter uppercase room code
+        while True:
+            code = "".join(random.choices(string.ascii_uppercase, k=4))
+            db_path = os.path.join(ROOMS_DIR, f"{code}.db")
+            if not os.path.exists(db_path):
+                break
+        
+        # Clone a fresh copy of the master template for this tournament lobby
+        shutil.copy(MASTER_TEMPLATE, db_path)
+        return jsonify({"status": "success", "room_code": code})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# 🌟 NEW ENDPOINT: Verify if a room exists before letting a player join
+@app.route('/api/check-room/<code>', methods=['GET'])
+def check_room(code):
+    sanitized_code = "".join([c for c in code if c.isalnum()]).upper()[:4]
+    db_path = os.path.join(ROOMS_DIR, f"{sanitized_code}.db")
+    if os.path.exists(db_path):
+        return jsonify({"exists": True, "room_code": sanitized_code})
+    return jsonify({"exists": False, "message": "Room code not found"}), 404
 
 def get_active_auction_id(cursor):
     cursor.execute("SELECT id, name, pitch_type, min_squad_size, timer_seconds, sudden_death_active FROM auctions WHERE status = 'In Progress' ORDER BY id DESC LIMIT 1")

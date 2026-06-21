@@ -85,6 +85,21 @@
     <h1 class="main-title">🏏 IPL Esports Simulator</h1>
     <p class="sub-title">Advanced EV Metrics. Live Tactical Insights. Permanent Legacy.</p>
     
+    <div class="card" style="margin-bottom: 20px; border: 2px dashed var(--border-color);">
+    <h3>👥 Game Mode Selection</h3>
+    <div id="mode-selection-zone">
+        <button class="btn success" onclick="initializeMultiplayerRoom()" style="width:100%; margin-bottom:10px;">Create Multiplayer Room</button>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="roomCodeInput" placeholder="Enter 4-Letter Code" maxlength="4" style="text-transform: uppercase; text-align: center;">
+            <button class="btn info" onclick="joinMultiplayerRoom()">Join Room</button>
+        </div>
+    </div>
+    <div id="active-room-zone" style="display: none; text-align: center; padding: 10px;">
+        <p>Connected to Shared Room: <strong id="displayRoomCode" style="font-size: 24px; color: var(--primary-color);">----</strong></p>
+        <button class="btn danger" onclick="leaveMultiplayerRoom()" style="margin-top: 5px; padding: 5px 10px; font-size: 12px;">Leave & Return to Solo Sandbox</button>
+    </div>
+    </div>
+
     <div class="lobby-grid">
         <div class="panel flex-panel" style="overflow-y:auto;">
             <h3>⚙️ 1. Auction Rules & Environment</h3>
@@ -304,6 +319,8 @@
     let xiSelections = {}; 
     let xiBuildingQueue = []; 
     let currentXITeamIndex = 0;
+    // 🌟 Track active multiplayer room state (null means single-player sandbox mode)
+    let CURRENT_ROOM_CODE = sessionStorage.getItem('active_room_code') || null;
 
     // 🌟 IDENTITY GENERATOR: Creates a unique signature for this browser session if it doesn't exist
     if (!localStorage.getItem('ipl_user_token')) {
@@ -317,6 +334,13 @@
         : 'https://sujitsaiy.pythonanywhere.com';
 
     window.onload = loadLobby;
+
+    // 🌟 Background sync cycle: Refreshes team boards every 3 seconds if inside a multiplayer link
+    setInterval(() => {
+        if (CURRENT_ROOM_CODE && document.getElementById('active-room-zone').style.display === 'block') {
+            syncDashboard();
+        }
+    }, 3000);
 
     function formatCurrency(amount) { return "₹" + (amount / 10000000).toFixed(2) + " Cr"; }
 
@@ -334,18 +358,22 @@
     async function safeFetch(url, options = {}) {
         const targetUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
         
-        // Ensure options.headers exists
         if (!options.headers) {
             options.headers = {};
         }
-        // Inject the user's isolated sandbox token
+        
         options.headers['X-User-Token'] = USER_TOKEN;
+        
+        // 🌟 Injects room routing token if user is inside a multiplayer room
+        if (CURRENT_ROOM_CODE) {
+            options.headers['X-Room-Code'] = CURRENT_ROOM_CODE;
+        }
 
         try {
             const res = await fetch(targetUrl, options);
             if (!res.ok) {
                 const errText = await res.text();
-                showToast(`Server Error: ${errText.substring(0, 50)}`, 'error');
+                showToast(`Error: ${errText.substring(0, 50)}`, 'error');
                 throw new Error(errText);
             }
             return res;
@@ -876,6 +904,58 @@
             document.getElementById('seasonDetailsModal').style.display = 'flex';
         } catch(e) {}
     }
+
+    async function initializeMultiplayerRoom() {
+        try {
+            const res = await safeFetch('/api/create-room', { method: 'POST' });
+            const data = await res.json();
+            if(data.room_code) {
+                switchRoomState(data.room_code);
+                showToast(`Lobby ${data.room_code} Created Live!`, "success");
+            }
+        } catch (e) { showToast("Failed to compile multiplayer container.", "error"); }
+    }
+
+    async function joinMultiplayerRoom() {
+        const inputField = document.getElementById('roomCodeInput');
+        const targetCode = inputField.value.trim().toUpperCase();
+        if(targetCode.length !== 4) return showToast("Room codes must be exactly 4 characters.", "warning");
+
+        try {
+            const res = await fetch(`${API_BASE}/api/check-room/${targetCode}`);
+            if(res.ok) {
+                switchRoomState(targetCode);
+                showToast(`Connected to Lobby ${targetCode}`, "success");
+                inputField.value = "";
+            } else {
+                showToast("Lobby room code not found on server.", "error");
+            }
+        } catch(e) { showToast("Connection authentication failed.", "error"); }
+    }
+
+    function switchRoomState(code) {
+        CURRENT_ROOM_CODE = code;
+        sessionStorage.setItem('active_room_code', code);
+        document.getElementById('mode-selection-zone').style.display = 'none';
+        document.getElementById('active-room-zone').style.display = 'block';
+        document.getElementById('displayRoomCode').innerText = code;
+        loadLobby(); // Refreshes the view to load data straight out of the shared room database
+    }
+
+    function leaveMultiplayerRoom() {
+        CURRENT_ROOM_CODE = null;
+        sessionStorage.removeItem('active_room_code');
+        document.getElementById('mode-selection-zone').style.display = 'block';
+        document.getElementById('active-room-zone').style.display = 'none';
+        showToast("Returned to isolated private sandbox.", "info");
+        loadLobby();
+    }
+
+    // 🌟 AUTO-RUN CHECK ON PAGE REFRESH
+    if (CURRENT_ROOM_CODE) {
+        setTimeout(() => switchRoomState(CURRENT_ROOM_CODE), 100);
+    }
+
 </script>
 </body>
 </html>
