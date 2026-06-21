@@ -324,12 +324,10 @@
     let CURRENT_ROOM_CODE = sessionStorage.getItem('active_room_code') || null;
     let IS_HOST = sessionStorage.getItem('is_host') === 'true'; // 🌟 Tracks role authority
     
+    // 🌟 AUTO-PULL MATRIX: If the auction is active but the user is stuck in the lobby, pull them in!
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const auctionScreen = document.getElementById('auction-screen'); // Or whatever ID wraps your main draft dashboard
 
-    // 🌟 IDENTITY GENERATOR: Creates a unique signature for this browser session if it doesn't exist
-    if (!localStorage.getItem('ipl_user_token')) {
-        const uniqueToken = 'usr_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-        localStorage.setItem('ipl_user_token', uniqueToken);
-    }
     const USER_TOKEN = localStorage.getItem('ipl_user_token');
 
     const API_BASE = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
@@ -590,11 +588,27 @@
         globalMeta = packet.meta;
         globalTeams = packet.teams;
 
+        // 🌟 AUTO-PULL MATRIX: If the auction is active but the user is stuck in the lobby, pull them in!
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const auctionScreen = document.getElementById('auction-screen'); // Or whatever ID wraps your main draft dashboard
+
         // 🌟 REVELATION MATRIX: If the auction is now active, dissolve the guest spinner!
-        if (!IS_HOST && CURRENT_ROOM_CODE) {
-            document.getElementById('setup-form-container').style.display = 'block';
-            if (document.getElementById('guest-waiting-screen')) {
-                document.getElementById('guest-waiting-screen').style.display = 'none';
+        if (lobbyScreen && lobbyScreen.style.display !== 'none') {
+            console.log("Active session detected! Transitioning UI...");
+            
+            // Hide the lobby and show the draft board
+            lobbyScreen.style.display = 'none';
+            if (auctionScreen) {
+                auctionScreen.style.display = 'block'; 
+            }
+            
+            // If the user is a guest being pulled in, fetch the pool so their left sidebar populates
+            if (!IS_HOST) {
+                try {
+                    const poolRes = await safeFetch('/api/pool');
+                    fullPlayerPool = await poolRes.json();
+                    renderPool('Available');
+                } catch(e) { console.error("Guest pool fetch failed", e); }
             }
         }
 
