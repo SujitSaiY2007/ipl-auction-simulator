@@ -101,7 +101,7 @@
     </div>
 
     <div class="lobby-grid">
-        <div class="panel flex-panel" style="overflow-y:auto;">
+        <div id="setup-form-container" class="panel flex-panel" style="overflow-y:auto;">
             <h3>⚙️ 1. Auction Rules & Environment</h3>
             <div class="input-group">
                 <input type="text" id="newAuctionName" placeholder="Session Title">
@@ -940,10 +940,9 @@
         const setupContainer = document.getElementById('setup-form-container');
         
         if (!IS_HOST && CURRENT_ROOM_CODE) {
-            // 🚫 Hide settings from guests so they can't hijack configuration fields
-            setupContainer.style.display = 'none';
+            // 🚫 Hide settings safely if they exist
+            if (setupContainer) setupContainer.style.display = 'none';
             
-            // Inject a clean waiting screen if it doesn't exist yet
             if (!document.getElementById('guest-waiting-screen')) {
                 const waitingBox = document.createElement('div');
                 waitingBox.id = 'guest-waiting-screen';
@@ -953,29 +952,35 @@
                 waitingBox.innerHTML = `
                     <div class="spinner" style="margin: 0 auto 20px auto; width: 40px; height: 40px; border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     <h2>⏳ Waiting for Host to Launch Auction...</h2>
-                    <p style="color: var(--text-muted);">The commissioner is currently setting up the budget rules and rosters. Hang tight!</p>
+                    <p style="color: var(--text-muted);">The commissioner is setting up the budget rules. Hang tight!</p>
                 `;
-                // Inject style keyframe for spinner if missing
+                
                 if(!document.getElementById('spinner-style')) {
                     const style = document.createElement('style');
                     style.id = 'spinner-style';
                     style.innerHTML = "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
                     document.head.appendChild(style);
                 }
-                setupContainer.parentNode.insertBefore(waitingBox, setupContainer);
+                
+                // Safely insert the waiting screen
+                if (setupContainer && setupContainer.parentNode) {
+                    setupContainer.parentNode.insertBefore(waitingBox, setupContainer);
+                } else {
+                    document.getElementById('active-room-zone').appendChild(waitingBox);
+                }
             } else {
                 document.getElementById('guest-waiting-screen').style.display = 'block';
             }
         } else {
             // 👑 Show everything to the host
-            setupContainer.style.display = 'block';
+            if (setupContainer) setupContainer.style.display = 'block';
             if (document.getElementById('guest-waiting-screen')) {
                 document.getElementById('guest-waiting-screen').style.display = 'none';
             }
         }
     }
 
-    async function initializeMultiplayerRoom() {
+   async function initializeMultiplayerRoom() {
         try {
             const res = await safeFetch('/api/create-room', { method: 'POST' });
             const data = await res.json();
@@ -985,7 +990,10 @@
                 switchRoomState(data.room_code);
                 showToast(`Lobby ${data.room_code} Created! You are the Host.`, "success");
             }
-        } catch (e) { showToast("Failed to compile multiplayer container.", "error"); }
+        } catch (e) { 
+            console.error("CRASH TRACE:", e); // 🌟 This will print the exact issue to your browser console!
+            showToast("Failed to compile multiplayer container.", "error"); 
+        }
     }
 
     async function joinMultiplayerRoom() {
