@@ -1,3 +1,5 @@
+from curses import meta
+
 from flask import Flask, jsonify, request, g
 from flask_cors import CORS
 import sqlite3
@@ -177,6 +179,36 @@ def add_franchise():
     finally:
         cursor.close(); conn.close()
 
+
+# 🌟 NEW ENDPOINT: Claim a Franchise
+@app.route('/api/franchises/claim', methods=['POST'])
+def claim_franchise():
+    try:
+        data = request.json
+        franchise_id = data.get('franchise_id')
+        user_token = request.headers.get('X-User-Token')
+        
+        db = get_db_connection()
+        
+        # 1. Check if the franchise exists and isn't already claimed
+        team = db.execute("SELECT owner_token, name FROM franchises WHERE id = ?", (franchise_id,)).fetchone()
+        
+        if not team:
+            return jsonify({"error": "Franchise not found."}), 404
+            
+        if team['owner_token']:
+            if team['owner_token'] == user_token:
+                return jsonify({"status": "success", "message": "You already own this team."})
+            return jsonify({"error": f"{team['name']} has already been claimed by another player!"}), 400
+            
+        # 2. Lock the franchise to this specific user's token
+        db.execute("UPDATE franchises SET owner_token = ? WHERE id = ?", (user_token, franchise_id))
+        db.commit()
+        
+        return jsonify({"status": "success", "message": f"Successfully claimed {team['name']}!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/franchises/delete', methods=['POST'])
 def delete_franchise():
     conn = get_db_connection(); cursor = conn.cursor()
@@ -241,7 +273,16 @@ def get_teams():
             FROM auction_teams at JOIN franchises f ON at.franchise_id = f.id WHERE at.auction_id = ?
         """, (auction_info['id'],))
         teams = [dict(row) for row in cursor.fetchall()]
-        return jsonify({"teams": teams, "meta": auction_info})
+        # Find the end of your get_teams() function and update the return:
+        user_token: str = request.headers.get('X-User-Token', 'default_guest')
+    
+        return jsonify
+        ({
+            "meta": dict(meta) if meta else {}, 
+            "teams": [dict(t) for t in teams],
+            "viewer_token": user_token  # 🌟 NEW: Tells the frontend exactly who is currently looking at the screen
+        })
+
     finally:
         cursor.close(); conn.close()
 

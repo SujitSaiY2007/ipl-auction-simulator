@@ -133,10 +133,16 @@
             <button class="btn-launch" onclick="showRulesModal()">🚀 Read Rules & Launch</button>
         </div>
 
-        <div id="guest-waiting-screen" class="panel flex-panel" style="display: none; text-align: center; justify-content: center;">
-            <div class="spinner" style="margin: 0 auto 20px auto; width: 45px; height: 45px; border: 5px solid rgba(0,0,0,0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-            <h2 style="color: var(--primary);">⏳ Waiting for Host...</h2>
-            <p style="color: var(--text-muted); font-size: 1.1em;">The commissioner is currently configuring the budget rules and registering the franchises. Hang tight!</p>
+        <div id="guest-waiting-screen" class="panel flex-panel" style="display: none; text-align: center;">
+            <h2 style="color: var(--primary); margin-bottom: 5px;">⏳ Lobby Waiting Room</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Claim your franchise while the commissioner sets up the rules.</p>
+            
+            <div id="guest-team-list" style="display: grid; gap: 10px; margin-bottom: 20px; text-align: left; max-height: 250px; overflow-y: auto;">
+                <p style="color: gray; text-align: center; font-style: italic;">Waiting for Host to register teams...</p>
+            </div>
+            
+            <div class="spinner" style="margin: 0 auto 15px auto; width: 30px; height: 30px; border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <p style="color: var(--info); font-weight: bold; margin: 0;">Awaiting Host Launch Sequence...</p>
         </div>
         
         <div class="panel flex-panel">
@@ -340,9 +346,10 @@
     setInterval(async () => {
         const lobbyVisible = document.getElementById('lobby-screen').style.display !== 'none';
         
-        // 1. Guest waiting in lobby -> Look for Host Launch
+        // 1. Guest waiting in lobby -> Look for Host Launch AND Live Teams
         if (CURRENT_ROOM_CODE && !IS_HOST && lobbyVisible) {
             try {
+                // A) Check if auction started
                 const res = await fetch(`${API_BASE}/api/teams`, { headers: { 'X-User-Token': USER_TOKEN, 'X-Room-Code': CURRENT_ROOM_CODE } });
                 if (res.ok) {
                     const packet = await res.json();
@@ -351,18 +358,24 @@
                         document.getElementById('lobby-screen').style.display = 'none';
                         document.getElementById('auction-screen').style.display = 'block';
                         
-                        // Force initial UI setup for Guest
                         globalMeta = packet.meta;
                         globalTeams = packet.teams;
                         syncDashboard(); 
                         
-                        // Fetch pool so left sidebar populates for Guest
                         const poolRes = await safeFetch('/api/pool');
                         if (poolRes.ok) {
                             fullPlayerPool = await poolRes.json();
                             renderPool('Available');
                         }
+                        return; // Exit loop since we are transitioning!
                     }
+                }
+                
+                // B) 🌟 Fetch Live Lobby Teams while waiting
+                const lobbyRes = await fetch(`${API_BASE}/api/lobby/data`, { headers: { 'X-User-Token': USER_TOKEN, 'X-Room-Code': CURRENT_ROOM_CODE } });
+                if (lobbyRes.ok) {
+                    const lobbyData = await lobbyRes.json();
+                    renderGuestLobbyTeams(lobbyData.franchises);
                 }
             } catch(e) {}
         }
@@ -669,18 +682,44 @@
             globalMeta = packet.meta;
             globalTeams = packet.teams;
 
+            // 🔒 NEW: Role-Based Access Control for Bidding Nodes
             const gridContainer = document.getElementById('interactiveTeamGrid');
             gridContainer.innerHTML = '';
+            const viewerToken = packet.viewer_token; // We added this to the backend in Step 1!
+
             packet.teams.forEach(t => {
                 if(!t.is_finished) {
+                    // Determine if the person looking at the screen has permission to use this team
+                    let hasPermission = false;
+                    
+                    if (IS_HOST) {
+                        hasPermission = true; // 👑 Commissioner has master override to control AI/unclaimed teams
+                    } else if (t.owner_token === viewerToken) {
+                        hasPermission = true; // ✅ Guest specifically claimed this team in the lobby
+                    }
+
                     const btn = document.createElement('button');
                     btn.className = 'team-bid-btn';
-                    btn.innerText = t.name;
-                    btn.onclick = () => {
-                        document.querySelectorAll('.team-bid-btn').forEach(b => b.classList.remove('active-bidder'));
-                        btn.classList.add('active-bidder');
-                        activeBiddingTeam = t.id;
-                    };
+                    
+                    if (hasPermission) {
+                        // 🟢 Active Button (They own it or are the Host)
+                        btn.innerText = t.name;
+                        btn.onclick = () => {
+                            document.querySelectorAll('.team-bid-btn').forEach(b => b.classList.remove('active-bidder'));
+                            btn.classList.add('active-bidder');
+                            activeBiddingTeam = t.id;
+                        };
+                    } else {
+                        // 🔴 Locked Button (Guest looking at someone else's team)
+                        btn.innerText = `🔒 ${t.name}`;
+                        btn.style.opacity = '0.4';
+                        btn.style.cursor = 'not-allowed';
+                        btn.style.background = '#f1f2f6';
+                        btn.onclick = () => {
+                            showToast(`Access Denied: You do not control ${t.name}`, "warning");
+                        };
+                    }
+                    
                     gridContainer.appendChild(btn);
                 }
             });
@@ -1003,6 +1042,58 @@
             
             document.getElementById('seasonDetailsModal').style.display = 'flex';
         } catch(e) {}
+    }
+
+    // --- STEP 2: MULTIPLAYER CLAIMING ENGINE ---
+
+    async function claimTeam(franchiseId) {
+        try {
+            const res = await safeFetch('/api/franchises/claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ franchise_id: franchiseId })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                showToast(data.message, "success");
+            } else {
+                showToast(data.error || "Failed to claim team", "error");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderGuestLobbyTeams(franchises) {
+        const listDiv = document.getElementById('guest-team-list');
+        if (!franchises || franchises.length === 0) {
+            listDiv.innerHTML = '<p style="color: gray; text-align: center; font-style: italic;">Waiting for Host to register teams...</p>';
+            return;
+        }
+
+        listDiv.innerHTML = franchises.map(f => {
+            let buttonHtml = '';
+            let cardStyle = 'border: 1px solid #dfe6e9;';
+
+            if (f.owner_token === USER_TOKEN) {
+                // 👑 You own this team
+                buttonHtml = `<button disabled style="background: var(--success); color: white; padding: 5px 15px; border-radius: 4px; opacity: 1;">✅ Your Team</button>`;
+                cardStyle = 'border: 2px solid var(--success); background: #f0fdf4;';
+            } else if (f.owner_token) {
+                // 🚫 Someone else claimed it
+                buttonHtml = `<button disabled style="background: #e2e6ea; color: gray; padding: 5px 15px; border-radius: 4px;">🔒 Claimed</button>`;
+            } else {
+                // 🎯 Available to claim
+                buttonHtml = `<button onclick="claimTeam(${f.id})" style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 4px;">🎯 Claim</button>`;
+            }
+
+            return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; ${cardStyle}">
+                <strong style="font-size: 1.1em; color: var(--text-main);">${f.name}</strong>
+                ${buttonHtml}
+            </div>`;
+        }).join('');
     }
 
 </script>
