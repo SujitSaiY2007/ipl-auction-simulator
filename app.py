@@ -283,29 +283,42 @@ def delete_auction():
 
 @app.route('/api/teams', methods=['GET'])
 def get_teams():
-    conn = get_db_connection(); cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
     try:
         auction_info = get_active_auction_id(cursor)
-        if not auction_info: return jsonify({"error": "No active session"}), 400
-            
-        cursor.execute("""
-            SELECT at.id, f.name, at.purse, at.squad_size, at.is_finished, at.sudden_death_draws_left, at.sudden_death_needs,
-                   (SELECT COALESCE(SUM(sold_price), 0) FROM auction_players WHERE auction_team_id = at.id) as spent
-            FROM auction_teams at JOIN franchises f ON at.franchise_id = f.id WHERE at.auction_id = ?
-        """, (auction_info['id'],))
-        teams = [dict(row) for row in cursor.fetchall()]
-        # Find the end of your get_teams() function and update the return:
-        user_token: str = request.headers.get('X-User-Token', 'default_guest')
-    
-        return jsonify
-        ({
-            "meta": dict(meta) if meta else {}, 
-            "teams": [dict(t) for t in teams],
-            "viewer_token": user_token  # 🌟 NEW: Tells the frontend exactly who is currently looking at the screen
-        })
+        if not auction_info: 
+            return jsonify({"error": "No active session"}), 400
 
+        # 🌟 FIX 1: Added f.owner_token to your brilliant SELECT statement!
+        cursor.execute("""
+            SELECT at.id, f.name, f.owner_token, at.purse, at.squad_size, at.is_finished, at.sudden_death_draws_left, at.sudden_death_needs,
+                   (SELECT COALESCE(SUM(sold_price), 0) FROM auction_players WHERE auction_team_id = at.id) as spent
+            FROM auction_teams at 
+            JOIN franchises f ON at.franchise_id = f.id 
+            WHERE at.auction_id = ?
+        """, (auction_info['id'],))
+        
+        teams = [dict(row) for row in cursor.fetchall()]
+
+        # 🌟 FIX 2: Safely grab the viewer's token
+        user_token = request.headers.get('X-User-Token', 'default_guest')
+
+        # 🌟 FIX 3: Replaced the undefined 'meta' variable with your 'auction_info' variable
+        return jsonify({
+            "meta": dict(auction_info),
+            "teams": teams,
+            "viewer_token": user_token
+        })
+        
+    except Exception as e:
+        # If Python crashes, return the exact error message so we can read it!
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": f"Python Error: {str(e)}"}), 500
     finally:
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
 
 @app.route('/api/live-highlights', methods=['GET'])
 def get_live_highlights():
