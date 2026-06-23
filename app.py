@@ -18,6 +18,23 @@ MASTER_TEMPLATE = os.path.join(BASE_DIR, "ipl_auction.db")
 SANDBOX_DIR = os.path.join(BASE_DIR, "sandboxes")
 ROOMS_DIR = os.path.join(BASE_DIR, "rooms")
 
+def upgrade_db_schema(conn):
+    """
+    Automatically checks and patches the database schema on the fly.
+    This ensures old sandboxes and rooms don't break with new updates.
+    """
+    cursor = conn.cursor()
+    
+    # Check what columns currently exist in the franchises table
+    cursor.execute("PRAGMA table_info(franchises)")
+    columns = [info[1] for info in cursor.fetchall()]
+    
+    # If the new column is missing, inject it silently
+    if 'owner_token' not in columns:
+        cursor.execute("ALTER TABLE franchises ADD COLUMN owner_token TEXT")
+        conn.commit()
+        print("Database Schema Upgraded: Added 'owner_token' to franchises.")
+
 def get_db_connection():
     """Routes traffic based on multiplayer headers or falls back to solo sandbox."""
     room_code = request.headers.get('X-Room-Code')
@@ -40,6 +57,10 @@ def get_db_connection():
 
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+
+    # 🌟 NEW: Auto-patch the database before letting the app use it!
+    upgrade_db_schema(conn)
+
     return conn
 
 @app.route('/api/create-room', methods=['POST'])
