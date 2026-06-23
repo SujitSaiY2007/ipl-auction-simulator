@@ -348,6 +348,10 @@
         const lobbyVisible = document.getElementById('lobby-screen').style.display !== 'none';
         
         // 1. Guest waiting in lobby
+        // 🌟 NEW: Host actively monitors the lobby for incoming Guest claims
+        if (CURRENT_ROOM_CODE && IS_HOST && lobbyVisible) {
+            loadLobby(); 
+        }
         if (CURRENT_ROOM_CODE && !IS_HOST && lobbyVisible) {
             try {
                 const res = await fetch(`${API_BASE}/api/teams`, { headers: { 'X-User-Token': USER_TOKEN, 'X-Room-Code': CURRENT_ROOM_CODE } });
@@ -402,12 +406,23 @@
                         if(!IS_HOST && concludeBtn) concludeBtn.style.display = 'none';
                     }
 
-                    // B) 🌟 TWO-WAY BID SYNC: If the server has a higher bid, adopt it locally!
+                    // B) 🌟 TWO-WAY BID SYNC: Adopt the higher bid AND the team that made it
                     if (serverState.bid > currentBid) {
                         currentBid = serverState.bid;
                         document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid);
-                        // Reset the local timer because a new bid just came in
                         timeLeft = globalMeta ? globalMeta.timer_seconds : 60; 
+                        
+                        // 🌟 VISUALLY HIGHLIGHT THE TEAM ON THE HOST SCREEN
+                        if (serverState.activeTeam) {
+                            activeBiddingTeam = serverState.activeTeam;
+                            document.querySelectorAll('.team-bid-btn').forEach(b => b.classList.remove('active-bidder'));
+                            const targetTeam = globalTeams.find(t => t.id === activeBiddingTeam);
+                            if(targetTeam) {
+                                document.querySelectorAll('.team-bid-btn').forEach(b => { 
+                                    if(b.innerText.includes(targetTeam.name)) b.classList.add('active-bidder'); 
+                                });
+                            }
+                        }
                     }
 
                     // C) Sync Master Timer (Guest blindly obeys Host's timer)
@@ -429,11 +444,11 @@
                     }
                 }
 
-                // D) 👑 HOST ONLY: Pulse the master timer state back to the server
-                if (IS_HOST) {
-                    const hostState = JSON.stringify({ player: currentPlayer, bid: currentBid, time: timeLeft, locked: isBiddingLocked });
-                    safeFetch('/api/broadcast', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({state: hostState}) });
-                }
+                // D) 👑 HOST ONLY: Pulse master state (now including activeTeam)
+                    if (IS_HOST) {
+                        const hostState = JSON.stringify({ player: currentPlayer, bid: currentBid, time: timeLeft, locked: isBiddingLocked, activeTeam: activeBiddingTeam });
+                        safeFetch('/api/broadcast', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({state: hostState}) });
+                    }
             } catch(e) {}
         }
     }, 800); // 🚀 Latency dropped to 800ms
@@ -555,14 +570,27 @@
         try {
             const res = await safeFetch('/api/lobby/data');
             const data = await res.json();
-            const checkList = document.getElementById('franchiseCheckboxes');
-            if (checkList) {
-                checkList.innerHTML = data.franchises.map(f => `
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <label><input type="checkbox" class="franchise-cb" value="${f.id}"> ${f.name}</label>
-                    <button style="background:none; color:var(--danger); border:1px solid var(--danger); border-radius:4px; padding:2px 8px;" onclick="deleteFranchise(${f.id})">🗑️</button>
-                </div>`).join('');
-            }
+           const checkList = document.getElementById('franchiseCheckboxes');
+        if (checkList) {
+            // Save currently checked boxes so they don't uncheck during auto-refresh
+            const checkedIds = Array.from(document.querySelectorAll('.franchise-cb:checked')).map(cb => parseInt(cb.value));
+            
+            checkList.innerHTML = data.franchises.map(f => {
+                const isChecked = checkedIds.includes(f.id) ? 'checked' : '';
+                const claimBadge = f.owner_token 
+                    ? `<span style="background:var(--success); color:white; padding:3px 8px; border-radius:4px; font-size:0.8em; font-weight:bold;">✅ Claimed</span>` 
+                    : `<span style="color:gray; font-size:0.8em; font-style:italic;">Waiting for Guest...</span>`;
+                    
+                return `
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #eee;">
+                    <label style="flex:1; cursor:pointer; font-weight:bold;"><input type="checkbox" class="franchise-cb" value="${f.id}" ${isChecked}> ${f.name}</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        ${claimBadge}
+                        <button style="background:none; color:var(--danger); border:1px solid var(--danger); border-radius:4px; padding:2px 8px;" onclick="deleteFranchise(${f.id})">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
                 
             const gamesList = document.getElementById('pastGamesList');
             if (gamesList) {
@@ -870,16 +898,32 @@
    function increaseBid(amt) { 
         if(!currentPlayer || isBiddingLocked) return;
         
+        // 🌟 AUTOMATIC ASSIGNMENT: If Guest, auto-select their claimed team. If Host, demand selection.
+        if (!IS_HOST) {
+            const myTeam = globalTeams.find(t => t.owner_token === USER_TOKEN);
+            if (myTeam) activeBiddingTeam = myTeam.id;
+        } else {
+            if (!activeBiddingTeam) return showToast("Commissioner: Select a franchise before bidding on their behalf!", "warning");
+        }
+
         currentBid += amt; 
         document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid); 
         
-        // Reset timer locally
+        // Visually highlight the active button locally
+        document.querySelectorAll('.team-bid-btn').forEach(b => b.classList.remove('active-bidder'));
+        const targetTeam = globalTeams.find(t => t.id === activeBiddingTeam);
+        if(targetTeam) {
+            document.querySelectorAll('.team-bid-btn').forEach(b => { 
+                if(b.innerText.includes(targetTeam.name)) b.classList.add('active-bidder'); 
+            });
+        }
+        
         timeLeft = globalMeta ? globalMeta.timer_seconds : 60;
         startTimer(); 
         
-        // 🚀 INSTANT FIRE: Tell the server about the new bid immediately
         if (CURRENT_ROOM_CODE) {
-            const state = JSON.stringify({ player: currentPlayer, bid: currentBid, time: timeLeft, locked: false });
+            // 🌟 PUSH ACTIVE TEAM TO SERVER
+            const state = JSON.stringify({ player: currentPlayer, bid: currentBid, time: timeLeft, locked: false, activeTeam: activeBiddingTeam });
             safeFetch('/api/broadcast', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({state}) });
         }
     }

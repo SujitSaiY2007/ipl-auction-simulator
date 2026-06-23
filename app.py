@@ -575,10 +575,11 @@ def get_season_details(auction_id):
     finally:
         cursor.close(); conn.close()
 
-# 🌟 UPDATED ENDPOINT: High-Speed Multiplayer Sync with Bid Protection
+
+# 🌟 UPDATED ENDPOINT: High-Speed Multiplayer Sync with Team Tracking
 @app.route('/api/broadcast', methods=['GET', 'POST'])
 def broadcast_state():
-    import json # Ensure json is imported
+    import json
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -590,12 +591,13 @@ def broadcast_state():
             state_data = request.json.get('state', '{}')
             new_state = json.loads(state_data)
             
-            # 🛡️ THE BID ENFORCER: Prevent the Host from accidentally erasing a Guest's higher bid
+            # 🛡️ THE BID ENFORCER: Preserve both the highest bid AND the Team who made it!
             row = cursor.execute("SELECT live_state FROM auctions WHERE id = ?", (auction_info['id'],)).fetchone()
             if row and row['live_state'] and row['live_state'] != '{}':
                 current_state = json.loads(row['live_state'])
                 if current_state.get('bid', 0) > new_state.get('bid', 0):
-                    new_state['bid'] = current_state['bid']  # Force the true highest bid to survive
+                    new_state['bid'] = current_state['bid']  
+                    new_state['activeTeam'] = current_state.get('activeTeam') # 🌟 Lock in the team!
                     state_data = json.dumps(new_state)
 
             cursor.execute("UPDATE auctions SET live_state = ? WHERE id = ?", (state_data, auction_info['id']))
