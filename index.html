@@ -343,11 +343,11 @@
         ? 'http://127.0.0.1:5000' 
         : 'https://sujitsaiy.pythonanywhere.com';
 
-    // 🌟 UNIFIED MASTER SYNC ENGINE
+    // 🌟 UNIFIED MASTER SYNC ENGINE (High-Speed: 800ms Latency)
     setInterval(async () => {
         const lobbyVisible = document.getElementById('lobby-screen').style.display !== 'none';
         
-        // 1. Guest waiting in lobby -> Look for Host Launch AND Live Teams
+        // 1. Guest waiting in lobby
         if (CURRENT_ROOM_CODE && !IS_HOST && lobbyVisible) {
             try {
                 const res = await fetch(`${API_BASE}/api/teams`, { headers: { 'X-User-Token': USER_TOKEN, 'X-Room-Code': CURRENT_ROOM_CODE } });
@@ -356,10 +356,8 @@
                     if (packet.teams && packet.teams.length > 0) {
                         document.getElementById('lobby-screen').style.display = 'none';
                         document.getElementById('auction-screen').style.display = 'block';
-                        
                         globalMeta = packet.meta; globalTeams = packet.teams;
                         syncDashboard(); 
-                        
                         const poolRes = await safeFetch('/api/pool');
                         if (poolRes.ok) { fullPlayerPool = await poolRes.json(); renderPool('Available'); }
                         return; 
@@ -373,63 +371,72 @@
             } catch(e) {}
         }
         
-        // 2. 🌟 ACTIVE GAME ENGINE -> SYNC TEAMS & LIVE SCREEN BROADCAST
+        // 2. 🌟 ACTIVE GAME ENGINE: TWO-WAY SYNC
         if (CURRENT_ROOM_CODE && !lobbyVisible) {
             syncDashboard();
 
-            if (IS_HOST) {
-                // 👑 HOST: Push the live screen state to the server
-                const state = JSON.stringify({ player: currentPlayer, bid: currentBid, time: timeLeft, locked: isBiddingLocked });
-                safeFetch('/api/broadcast', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({state}) });
-            } else {
-                // 👤 GUEST: Pull the live screen state from the server
-                safeFetch('/api/broadcast').then(r => r.json()).then(data => {
-                    if (data.state && data.state !== '{}') {
-                        const live = JSON.parse(data.state);
+            try {
+                // Both Host and Guest MUST read the server state first!
+                const res = await safeFetch('/api/broadcast');
+                const data = await res.json();
+
+                if (data.state && data.state !== '{}') {
+                    const serverState = JSON.parse(data.state);
+
+                    // A) Sync Player Card (Pulls Guest into the draft room)
+                    if (serverState.player && (!currentPlayer || currentPlayer.auction_player_id !== serverState.player.auction_player_id)) {
+                        currentPlayer = serverState.player;
+                        document.getElementById('playerName').innerText = serverState.player.display_name;
+                        document.getElementById('playerRole').innerText = `${serverState.player.role} | ${serverState.player.country}`;
+                        document.getElementById('basePrice').innerText = formatCurrency(serverState.player.base_price);
+                        document.getElementById('liveAiBadge').style.display = 'inline-block';
+                        document.getElementById('liveAiBadge').innerText = `AI Score: ${serverState.player.ai_rating}`;
+                        document.getElementById('timerTextDisplay').style.display = 'block';
+                        document.getElementById('timerBarContainer').style.display = 'block';
                         
-                        // 🌟 MAGIC FIX: Force Guest out of "Initialize" and into Draft Board
                         document.getElementById('preDraftState').style.display = 'none';
                         document.getElementById('activeDraftState').style.display = 'block';
-                        
-                        // 🌟 MAGIC FIX: Hide Host Commissioner Controls from Guest
                         const nextBtn = document.querySelector('button[onclick="fetchNextPlayer()"]');
                         const concludeBtn = document.querySelector('button[onclick="triggerPostAuctionFlow()"]');
-                        if(nextBtn) nextBtn.style.display = 'none';
-                        if(concludeBtn) concludeBtn.style.display = 'none';
+                        if(!IS_HOST && nextBtn) nextBtn.style.display = 'none';
+                        if(!IS_HOST && concludeBtn) concludeBtn.style.display = 'none';
+                    }
 
-                        // 🌟 Sync the Player Card & Timer
-                        if (live.player) {
-                            currentPlayer = live.player;
-                            document.getElementById('playerName').innerText = live.player.display_name;
-                            document.getElementById('playerRole').innerText = `${live.player.role} | ${live.player.country}`;
-                            document.getElementById('basePrice').innerText = formatCurrency(live.player.base_price);
-                            document.getElementById('liveAiBadge').style.display = 'inline-block';
-                            document.getElementById('liveAiBadge').innerText = `AI Score: ${live.player.ai_rating}`;
-                            document.getElementById('timerTextDisplay').style.display = 'block';
-                            document.getElementById('timerBarContainer').style.display = 'block';
-                        }
+                    // B) 🌟 TWO-WAY BID SYNC: If the server has a higher bid, adopt it locally!
+                    if (serverState.bid > currentBid) {
+                        currentBid = serverState.bid;
+                        document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid);
+                        // Reset the local timer because a new bid just came in
+                        timeLeft = globalMeta ? globalMeta.timer_seconds : 60; 
+                    }
 
-                        currentBid = live.bid;
-                        document.getElementById('currentBidDisplay').innerText = formatCurrency(live.bid);
-                        document.getElementById('timerTextDisplay').innerText = live.time + "s";
-                        document.getElementById('timerFillBar').style.width = `${(live.time / (globalMeta ? globalMeta.timer_seconds : 60)) * 100}%`;
+                    // C) Sync Master Timer (Guest blindly obeys Host's timer)
+                    if (!IS_HOST) {
+                        timeLeft = serverState.time;
+                        isBiddingLocked = serverState.locked;
+                        document.getElementById('timerTextDisplay').innerText = timeLeft + "s";
+                        document.getElementById('timerFillBar').style.width = `${(timeLeft / (globalMeta ? globalMeta.timer_seconds : 60)) * 100}%`;
                         
-                        if(live.time <= 10) {
+                        if(timeLeft <= 10) {
                             document.getElementById('timerFillBar').style.backgroundColor = "var(--danger)";
                             document.getElementById('timerTextDisplay').style.color = "var(--danger)";
                         } else {
                             document.getElementById('timerFillBar').style.backgroundColor = "var(--accent)";
                             document.getElementById('timerTextDisplay').style.color = "var(--accent)";
                         }
-
-                        isBiddingLocked = live.locked;
                         document.getElementById('bidBtnsContainer').style.opacity = isBiddingLocked ? '0.4' : '1';
                         updateDynamicAdvice();
                     }
-                });
-            }
+                }
+
+                // D) 👑 HOST ONLY: Pulse the master timer state back to the server
+                if (IS_HOST) {
+                    const hostState = JSON.stringify({ player: currentPlayer, bid: currentBid, time: timeLeft, locked: isBiddingLocked });
+                    safeFetch('/api/broadcast', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({state: hostState}) });
+                }
+            } catch(e) {}
         }
-    }, 2500);
+    }, 800); // 🚀 Latency dropped to 800ms
 
     window.onload = loadLobby;
 
@@ -860,16 +867,17 @@
         document.getElementById('statsModal').style.display = 'flex';
     }
 
-    function increaseBid(amt) { 
+   function increaseBid(amt) { 
         if(!currentPlayer || isBiddingLocked) return;
+        
         currentBid += amt; 
         document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid); 
         
-        // Reset local timer
+        // Reset timer locally
         timeLeft = globalMeta ? globalMeta.timer_seconds : 60;
-        startTimer();
+        startTimer(); 
         
-        // 🌟 INSTANT MULTIPLAYER BROADCAST: Tell the server someone bid!
+        // 🚀 INSTANT FIRE: Tell the server about the new bid immediately
         if (CURRENT_ROOM_CODE) {
             const state = JSON.stringify({ player: currentPlayer, bid: currentBid, time: timeLeft, locked: false });
             safeFetch('/api/broadcast', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({state}) });

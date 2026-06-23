@@ -575,10 +575,10 @@ def get_season_details(auction_id):
     finally:
         cursor.close(); conn.close()
 
-# 🌟 NEW ENDPOINT: Multiplayer Screen Synchronization
-# 🌟 UPDATED ENDPOINT: Multiplayer Screen Synchronization
+# 🌟 UPDATED ENDPOINT: High-Speed Multiplayer Sync with Bid Protection
 @app.route('/api/broadcast', methods=['GET', 'POST'])
 def broadcast_state():
+    import json # Ensure json is imported
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -587,13 +587,21 @@ def broadcast_state():
             return jsonify({"error": "No active session"}), 400
 
         if request.method == 'POST':
-            # 🌟 FIX: Target 'auctions' table
             state_data = request.json.get('state', '{}')
+            new_state = json.loads(state_data)
+            
+            # 🛡️ THE BID ENFORCER: Prevent the Host from accidentally erasing a Guest's higher bid
+            row = cursor.execute("SELECT live_state FROM auctions WHERE id = ?", (auction_info['id'],)).fetchone()
+            if row and row['live_state'] and row['live_state'] != '{}':
+                current_state = json.loads(row['live_state'])
+                if current_state.get('bid', 0) > new_state.get('bid', 0):
+                    new_state['bid'] = current_state['bid']  # Force the true highest bid to survive
+                    state_data = json.dumps(new_state)
+
             cursor.execute("UPDATE auctions SET live_state = ? WHERE id = ?", (state_data, auction_info['id']))
             conn.commit()
             return jsonify({"status": "success"})
         else:
-            # 🌟 FIX: Target 'auctions' table
             row = cursor.execute("SELECT live_state FROM auctions WHERE id = ?", (auction_info['id'],)).fetchone()
             return jsonify({"state": row['live_state'] if row and row['live_state'] else '{}'})
     except Exception as e:
@@ -601,6 +609,6 @@ def broadcast_state():
     finally:
         cursor.close()
         conn.close()
-        
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
