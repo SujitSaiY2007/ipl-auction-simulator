@@ -30,12 +30,12 @@ def upgrade_db_schema(conn):
             if 'owner_token' not in [info[1] for info in cursor.fetchall()]:
                 cursor.execute("ALTER TABLE franchises ADD COLUMN owner_token TEXT")
                 
-        # 2. Safely check and patch auction_meta table
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_meta'")
+        # 2. 🌟 FIX: Safely check and patch the 'auctions' table (not auction_meta!)
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='auctions'")
         if cursor.fetchone():
-            cursor.execute("PRAGMA table_info(auction_meta)")
+            cursor.execute("PRAGMA table_info(auctions)")
             if 'live_state' not in [info[1] for info in cursor.fetchall()]:
-                cursor.execute("ALTER TABLE auction_meta ADD COLUMN live_state TEXT")
+                cursor.execute("ALTER TABLE auctions ADD COLUMN live_state TEXT")
                 
         conn.commit()
     except Exception as e:
@@ -576,6 +576,7 @@ def get_season_details(auction_id):
         cursor.close(); conn.close()
 
 # 🌟 NEW ENDPOINT: Multiplayer Screen Synchronization
+# 🌟 UPDATED ENDPOINT: Multiplayer Screen Synchronization
 @app.route('/api/broadcast', methods=['GET', 'POST'])
 def broadcast_state():
     conn = get_db_connection()
@@ -586,20 +587,20 @@ def broadcast_state():
             return jsonify({"error": "No active session"}), 400
 
         if request.method == 'POST':
-            # Host or Guest is pushing a new Bid or Timer state to the server
+            # 🌟 FIX: Target 'auctions' table
             state_data = request.json.get('state', '{}')
-            cursor.execute("UPDATE auction_meta SET live_state = ? WHERE id = ?", (state_data, auction_info['id']))
+            cursor.execute("UPDATE auctions SET live_state = ? WHERE id = ?", (state_data, auction_info['id']))
             conn.commit()
             return jsonify({"status": "success"})
         else:
-            # Guest is pulling the live state to update their screen
-            row = cursor.execute("SELECT live_state FROM auction_meta WHERE id = ?", (auction_info['id'],)).fetchone()
+            # 🌟 FIX: Target 'auctions' table
+            row = cursor.execute("SELECT live_state FROM auctions WHERE id = ?", (auction_info['id'],)).fetchone()
             return jsonify({"state": row['live_state'] if row and row['live_state'] else '{}'})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
         cursor.close()
         conn.close()
-
+        
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
