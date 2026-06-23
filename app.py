@@ -11,28 +11,23 @@ import string
 app = Flask(__name__)
 CORS(app)
 
-# Define paths for sandbox isolation
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SANDBOX_DIR = os.path.join(BASE_DIR, "sandboxes")
 MASTER_TEMPLATE = os.path.join(BASE_DIR, "ipl_auction.db")
-ROOMS_DIR = os.path.join(BASE_DIR, "rooms")  # 🌟 New directory for multiplayer rooms
-
+SANDBOX_DIR = os.path.join(BASE_DIR, "sandboxes")
+ROOMS_DIR = os.path.join(BASE_DIR, "rooms")
 
 def get_db_connection():
-    """
-    Dynamically routes traffic. Checks if a multiplayer room code header exists.
-    If yes, links to the shared room DB. If no, falls back to the personal sandbox DB.
-    """
+    """Routes traffic based on multiplayer headers or falls back to solo sandbox."""
     room_code = request.headers.get('X-Room-Code')
 
     if room_code and room_code.strip():
-        # 👥 MULTIPLAYER TRACK
+        # 👥 MULTIPLAYER MODE
         room_code = "".join([c for c in room_code if c.isalnum()]).upper()[:4]
         db_path = os.path.join(ROOMS_DIR, f"{room_code}.db")
         if not os.path.exists(db_path):
-            raise FileNotFoundError(f"Room {room_code} does not exist or has expired.")
+            raise FileNotFoundError("Room does not exist.")
     else:
-        # 🕹️ SINGLE-PLAYER SANDBOX TRACK
+        # 🕹️ SOLO SANDBOX MODE
         user_token = request.headers.get('X-User-Token', 'default_guest')
         user_token = "".join([c for c in user_token if c.isalnum() or c in ('_', '-')])
         db_path = os.path.join(SANDBOX_DIR, f"{user_token}.db")
@@ -45,32 +40,24 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# 🌟 NEW ENDPOINT: Create a shared room database instance
 @app.route('/api/create-room', methods=['POST'])
 def create_room():
-    try:
-        os.makedirs(ROOMS_DIR, exist_ok=True)
-        # Generate a unique, non-clashing 4-letter uppercase room code
-        while True:
-            code = "".join(random.choices(string.ascii_uppercase, k=4))
-            db_path = os.path.join(ROOMS_DIR, f"{code}.db")
-            if not os.path.exists(db_path):
-                break
-        
-        # Clone a fresh copy of the master template for this tournament lobby
-        shutil.copy(MASTER_TEMPLATE, db_path)
-        return jsonify({"status": "success", "room_code": code})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    os.makedirs(ROOMS_DIR, exist_ok=True)
+    while True:
+        code = "".join(random.choices(string.ascii_uppercase, k=4))
+        db_path = os.path.join(ROOMS_DIR, f"{code}.db")
+        if not os.path.exists(db_path):
+            break
+            
+    shutil.copy(MASTER_TEMPLATE, db_path)
+    return jsonify({"room_code": code})
 
-# 🌟 NEW ENDPOINT: Verify if a room exists before letting a player join
 @app.route('/api/check-room/<code>', methods=['GET'])
 def check_room(code):
-    sanitized_code = "".join([c for c in code if c.isalnum()]).upper()[:4]
-    db_path = os.path.join(ROOMS_DIR, f"{sanitized_code}.db")
-    if os.path.exists(db_path):
-        return jsonify({"exists": True, "room_code": sanitized_code})
-    return jsonify({"exists": False, "message": "Room code not found"}), 404
+    sanitized = "".join([c for c in code if c.isalnum()]).upper()[:4]
+    if os.path.exists(os.path.join(ROOMS_DIR, f"{sanitized}.db")):
+        return jsonify({"valid": True})
+    return jsonify({"error": "Room not found"}), 404
 
 def get_active_auction_id(cursor):
     cursor.execute("SELECT id, name, pitch_type, min_squad_size, timer_seconds, sudden_death_active FROM auctions WHERE status = 'In Progress' ORDER BY id DESC LIMIT 1")

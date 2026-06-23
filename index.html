@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-site-verification" content="google09a1e5987201e20f" />
     <title>🏏 Ultimate IPL Esports Simulator | Live AI Mock Drafts</title>
-    <meta name="description" content="Experience the ultimate real-time IPL auction simulator. Manage franchise budgets, leverage dynamic AI insights, survive sudden death rounds, and build your perfect playing XI.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -75,6 +73,9 @@
         .highlight-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .tab-btn { flex: 1; padding: 10px; border: none; cursor: pointer; border-radius: 6px; font-weight: 600; background: #e2e6ea; color: var(--text-muted); }
         .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(30,60,114,0.2);}
+
+        /* Spinner Animation */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -85,18 +86,18 @@
     <h1 class="main-title">🏏 IPL Esports Simulator</h1>
     <p class="sub-title">Advanced EV Metrics. Live Tactical Insights. Permanent Legacy.</p>
     
-    <div class="card" style="margin-bottom: 20px; border: 2px dashed var(--border-color);">
+    <div class="card panel" style="margin-bottom: 20px; border: 2px dashed #dfe6e9;">
     <h3>👥 Game Mode Selection</h3>
     <div id="mode-selection-zone">
-        <button class="btn success" onclick="initializeMultiplayerRoom()" style="width:100%; margin-bottom:10px;">Create Multiplayer Room</button>
+        <button class="btn success" onclick="createRoom()" style="background: var(--success); color:white; padding: 15px; width:100%; border-radius: 8px; margin-bottom:10px;">Create Multiplayer Room</button>
         <div style="display: flex; gap: 10px;">
-            <input type="text" id="roomCodeInput" placeholder="Enter 4-Letter Code" maxlength="4" style="text-transform: uppercase; text-align: center;">
-            <button class="btn info" onclick="joinMultiplayerRoom()">Join Room</button>
+            <input type="text" id="roomCodeInput" placeholder="Enter 4-Letter Code" maxlength="4" style="text-transform: uppercase; text-align: center; flex:1; padding: 12px; border-radius: 8px; border: 1px solid #dfe6e9; font-weight:bold; font-size:1.1em;">
+            <button class="btn info" onclick="joinRoom()" style="background: var(--info); color:white; padding: 0 30px; border-radius: 8px;">Join Room</button>
         </div>
     </div>
     <div id="active-room-zone" style="display: none; text-align: center; padding: 10px;">
-        <p>Connected to Shared Room: <strong id="displayRoomCode" style="font-size: 24px; color: var(--primary-color);">----</strong></p>
-        <button class="btn danger" onclick="leaveMultiplayerRoom()" style="margin-top: 5px; padding: 5px 10px; font-size: 12px;">Leave & Return to Solo Sandbox</button>
+        <p>Connected to Shared Room: <strong id="displayRoomCode" style="font-size: 28px; color: var(--primary);">----</strong></p>
+        <button class="btn danger" onclick="leaveRoom()" style="background: var(--danger); color:white; margin-top: 5px; padding: 8px 15px; border-radius: 6px; font-size: 12px;">Leave & Return to Solo Sandbox</button>
     </div>
     </div>
 
@@ -131,6 +132,12 @@
             
             <button class="btn-launch" onclick="showRulesModal()">🚀 Read Rules & Launch</button>
         </div>
+
+        <div id="guest-waiting-screen" class="panel flex-panel" style="display: none; text-align: center; justify-content: center;">
+            <div class="spinner" style="margin: 0 auto 20px auto; width: 45px; height: 45px; border: 5px solid rgba(0,0,0,0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <h2 style="color: var(--primary);">⏳ Waiting for Host...</h2>
+            <p style="color: var(--text-muted); font-size: 1.1em;">The commissioner is currently configuring the budget rules and registering the franchises. Hang tight!</p>
+        </div>
         
         <div class="panel flex-panel">
             <h3>📜 Operations Ledger</h3>
@@ -139,7 +146,7 @@
     </div>
 </div>
 
-<div id="auction-screen" style="display: none; max-width: 1400px; margin: 0 auto;">
+<div id="auction-screen" style="display: none; max-width: 1400px; margin: 0 auto; padding-top: 20px;">
     <div class="dashboard-layout">
         
         <div class="panel flex-panel">
@@ -319,29 +326,54 @@
     let xiSelections = {}; 
     let xiBuildingQueue = []; 
     let currentXITeamIndex = 0;
-    // 🌟 Track active multiplayer room state (null means single-player sandbox mode)
 
+    // --- MULTIPLAYER STATE MANAGER ---
     let CURRENT_ROOM_CODE = sessionStorage.getItem('active_room_code') || null;
-    let IS_HOST = sessionStorage.getItem('is_host') === 'true'; // 🌟 Tracks role authority
-    
-    // 🌟 AUTO-PULL MATRIX: If the auction is active but the user is stuck in the lobby, pull them in!
-        const lobbyScreen = document.getElementById('lobby-screen');
-        const auctionScreen = document.getElementById('auction-screen'); // Or whatever ID wraps your main draft dashboard
-
+    let IS_HOST = sessionStorage.getItem('is_host') === 'true'; 
     const USER_TOKEN = localStorage.getItem('ipl_user_token');
 
     const API_BASE = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
         ? 'http://127.0.0.1:5000' 
         : 'https://sujitsaiy.pythonanywhere.com';
 
-    window.onload = loadLobby;
-
-    // 🌟 Background sync cycle: Refreshes team boards every 3 seconds if inside a multiplayer link
-    setInterval(() => {
-        if (CURRENT_ROOM_CODE && document.getElementById('active-room-zone').style.display === 'block') {
+    // 🌟 UNIFIED MASTER SYNC ENGINE
+    setInterval(async () => {
+        const lobbyVisible = document.getElementById('lobby-screen').style.display !== 'none';
+        
+        // 1. Guest waiting in lobby -> Look for Host Launch
+        if (CURRENT_ROOM_CODE && !IS_HOST && lobbyVisible) {
+            try {
+                const res = await fetch(`${API_BASE}/api/teams`, { headers: { 'X-User-Token': USER_TOKEN, 'X-Room-Code': CURRENT_ROOM_CODE } });
+                if (res.ok) {
+                    const packet = await res.json();
+                    if (packet.teams && packet.teams.length > 0) {
+                        console.log("Host launched auction! Pulling guest into draft board...");
+                        document.getElementById('lobby-screen').style.display = 'none';
+                        document.getElementById('auction-screen').style.display = 'block';
+                        
+                        // Force initial UI setup for Guest
+                        globalMeta = packet.meta;
+                        globalTeams = packet.teams;
+                        syncDashboard(); 
+                        
+                        // Fetch pool so left sidebar populates for Guest
+                        const poolRes = await safeFetch('/api/pool');
+                        if (poolRes.ok) {
+                            fullPlayerPool = await poolRes.json();
+                            renderPool('Available');
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+        
+        // 2. Active Game Engine -> Sync Draft Data for Everyone (Host & Guests)
+        if (CURRENT_ROOM_CODE && !lobbyVisible) {
             syncDashboard();
         }
-    }, 3000);
+    }, 2500);
+
+    window.onload = loadLobby;
 
     function formatCurrency(amount) { return "₹" + (amount / 10000000).toFixed(2) + " Cr"; }
 
@@ -355,45 +387,114 @@
         setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
-    // 🌟 UPDATED NETWORK GATEWAY: Automatically stamps the user's token onto the request headers
+    // --- NETWORK GATEWAY ---
     async function safeFetch(url, options = {}) {
         const targetUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
-        
-        if (!options.headers) {
-            options.headers = {};
-        }
-        
+        options.headers = options.headers || {};
         options.headers['X-User-Token'] = USER_TOKEN;
-        
-        // 🌟 Injects room routing token if user is inside a multiplayer room
-        if (CURRENT_ROOM_CODE) {
-            options.headers['X-Room-Code'] = CURRENT_ROOM_CODE;
-        }
+        if (CURRENT_ROOM_CODE) options.headers['X-Room-Code'] = CURRENT_ROOM_CODE;
 
         try {
             const res = await fetch(targetUrl, options);
             if (!res.ok) {
                 const errText = await res.text();
+                // Safely intercept "No active session" string instead of crashing the UI
+                if (errText.includes("No active session")) return res;
+                
                 showToast(`Error: ${errText.substring(0, 50)}`, 'error');
                 throw new Error(errText);
             }
             return res;
-        } catch (error) { console.error(error); throw error; }
+        } catch (error) { throw error; }
     }
 
+    // --- LOBBY MULTIPLAYER CONTROLS ---
+    async function createRoom() {
+        try {
+            const res = await safeFetch('/api/create-room', { method: 'POST' });
+            const data = await res.json();
+            if (data.room_code) {
+                CURRENT_ROOM_CODE = data.room_code;
+                IS_HOST = true;
+                sessionStorage.setItem('active_room_code', CURRENT_ROOM_CODE);
+                sessionStorage.setItem('is_host', 'true');
+                updateLobbyUI();
+                showToast(`Room ${CURRENT_ROOM_CODE} Created! You are Host.`, 'success');
+            }
+        } catch(e) { showToast("Failed to compile multiplayer container.", "error"); }
+    }
+
+    async function joinRoom() {
+        const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+        if (code.length !== 4) return showToast("Room code must be exactly 4 letters.", "warning");
+
+        try {
+            const res = await safeFetch(`/api/check-room/${code}`);
+            if (res.ok) {
+                CURRENT_ROOM_CODE = code;
+                IS_HOST = false;
+                sessionStorage.setItem('active_room_code', CURRENT_ROOM_CODE);
+                sessionStorage.setItem('is_host', 'false');
+                updateLobbyUI();
+                showToast(`Connected to Room ${CURRENT_ROOM_CODE} as Guest!`, 'success');
+            } else {
+                showToast("Room code not found on server.", "error");
+            }
+        } catch(e) { showToast("Connection failed.", "error"); }
+    }
+
+    function leaveRoom() {
+        CURRENT_ROOM_CODE = null;
+        IS_HOST = true; // Default back to Solo Host privileges
+        sessionStorage.removeItem('active_room_code');
+        sessionStorage.removeItem('is_host');
+        updateLobbyUI();
+        showToast("Returned to isolated Sandbox", "info");
+    }
+
+    function updateLobbyUI() {
+        if (CURRENT_ROOM_CODE) {
+            document.getElementById('mode-selection-zone').style.display = 'none';
+            document.getElementById('active-room-zone').style.display = 'block';
+            document.getElementById('displayRoomCode').innerText = CURRENT_ROOM_CODE;
+
+            if (IS_HOST) {
+                document.getElementById('setup-form-container').style.display = 'flex';
+                document.getElementById('guest-waiting-screen').style.display = 'none';
+            } else {
+                document.getElementById('setup-form-container').style.display = 'none';
+                document.getElementById('guest-waiting-screen').style.display = 'flex';
+            }
+        } else {
+            // Solo Sandbox Defaults
+            document.getElementById('mode-selection-zone').style.display = 'block';
+            document.getElementById('active-room-zone').style.display = 'none';
+            document.getElementById('setup-form-container').style.display = 'flex';
+            document.getElementById('guest-waiting-screen').style.display = 'none';
+        }
+        loadLobby();
+    }
+
+    // Auto-run UI check on page load
+    updateLobbyUI();
+
+    // --- REMAINDER OF GAMEPLAY LOGIC ---
     async function loadLobby() {
         try {
             const res = await safeFetch('/api/lobby/data');
             const data = await res.json();
             const checkList = document.getElementById('franchiseCheckboxes');
-            checkList.innerHTML = data.franchises.map(f => `
+            if (checkList) {
+                checkList.innerHTML = data.franchises.map(f => `
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                     <label><input type="checkbox" class="franchise-cb" value="${f.id}"> ${f.name}</label>
                     <button style="background:none; color:var(--danger); border:1px solid var(--danger); border-radius:4px; padding:2px 8px;" onclick="deleteFranchise(${f.id})">🗑️</button>
                 </div>`).join('');
+            }
                 
             const gamesList = document.getElementById('pastGamesList');
-            gamesList.innerHTML = data.auctions.map(a => `
+            if (gamesList) {
+                gamesList.innerHTML = data.auctions.map(a => `
                 <div class="save-file" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #eee;">
                     <div>
                         <strong style="font-size:1.1em; color:var(--primary); cursor:pointer; text-decoration:underline;" onclick="openSeasonDetails(${a.id}, '${a.name}')">${a.name}</strong><br>
@@ -404,6 +505,7 @@
                         <button style="background:var(--danger); color:white; padding:5px 10px; border-radius:4px;" onclick="killGame(${a.id})">🗑️</button>
                     </div>
                 </div>`).join('');
+            }
         } catch (e) {}
     }
 
@@ -503,7 +605,6 @@
         const adviceEl = document.getElementById('dynamicAiInsight');
         
         if (!isBiddingLocked) {
-            // Dynamic commentary based on specific player archetypes while timer ticks
             if (currentPlayer.role.includes('All-Rounder')) {
                 adviceEl.innerHTML = `⚡ <strong>Tactical Valuation:</strong> High demand multi-tool asset. Clears out late-game structural deficits.`;
             } else if (currentPlayer.batting_strike_rate > 145) {
@@ -517,7 +618,6 @@
             return;
         }
 
-        // Post-Timer Evaluation Matrix
         const ratio = currentBid / currentPlayer.true_value;
         if (ratio < 0.6) { adviceEl.innerHTML = `🔥 <strong>Absolute Value Pick!</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)} | Trait: ${currentPlayer.career_highlight}`; adviceEl.style.color = "var(--success)"; } 
         else if (ratio <= 1.0) { adviceEl.innerHTML = `== <strong>Fair Price Realized.</strong> AI Rating: ${formatCurrency(currentPlayer.true_value)}`; adviceEl.style.color = "var(--info)"; } 
@@ -552,65 +652,22 @@
         } catch(e) {}
     }
 
-    // CRASH PROTECTION LAYER: Isolate the inventory pool from session initialization blocks
     async function syncDashboard() {
         try {
             const poolRes = await safeFetch('/api/pool');
-            fullPlayerPool = await poolRes.json();
-            renderPool('Available');
-        } catch(poolErr) {
-            console.log("Awaiting connection initialization to map inventory pool nodes.");
-        }
+            if(poolRes.ok) {
+                fullPlayerPool = await poolRes.json();
+                renderPool('Available');
+            }
+        } catch(poolErr) { console.log("Awaiting connection initialization to map inventory pool nodes."); }
 
         try {
-            // 🌐 Direct fetch bypasses safeFetch's automatic error toasting
-        const targetUrl = `${API_BASE}/api/teams`;
-        const res = await fetch(targetUrl, {
-            headers: {
-                'X-User-Token': USER_TOKEN,
-                'X-Room-Code': CURRENT_ROOM_CODE || ''
-            }
-        });
-
-        const packet = await res.json();
-
-        // 🛑 Quietly intercept uninitialized rooms before they create UI elements
-        if (!res.ok) {
-            if (packet.error === "No active session") {
-                console.log("Room initialized, awaiting host launch configurations...");
-                return; // Safely exits the function loop
-            }
-            showToast(`Error: ${packet.error || 'Fetch failed'}`, 'error');
-            return;
-        }
-
-        // Cache the live states once verified active
-        globalMeta = packet.meta;
-        globalTeams = packet.teams;
-
-        // 🌟 AUTO-PULL MATRIX: If the auction is active but the user is stuck in the lobby, pull them in!
-        const lobbyScreen = document.getElementById('lobby-screen');
-        const auctionScreen = document.getElementById('auction-screen'); // Or whatever ID wraps your main draft dashboard
-
-        // 🌟 REVELATION MATRIX: If the auction is now active, dissolve the guest spinner!
-        if (lobbyScreen && lobbyScreen.style.display !== 'none') {
-            console.log("Active session detected! Transitioning UI...");
+            const res = await safeFetch('/api/teams');
+            if(!res.ok) return; // Silent intercept allows graceful fail
             
-            // Hide the lobby and show the draft board
-            lobbyScreen.style.display = 'none';
-            if (auctionScreen) {
-                auctionScreen.style.display = 'block'; 
-            }
-            
-            // If the user is a guest being pulled in, fetch the pool so their left sidebar populates
-            if (!IS_HOST) {
-                try {
-                    const poolRes = await safeFetch('/api/pool');
-                    fullPlayerPool = await poolRes.json();
-                    renderPool('Available');
-                } catch(e) { console.error("Guest pool fetch failed", e); }
-            }
-        }
+            const packet = await res.json();
+            globalMeta = packet.meta;
+            globalTeams = packet.teams;
 
             const gridContainer = document.getElementById('interactiveTeamGrid');
             gridContainer.innerHTML = '';
@@ -723,14 +780,12 @@
         if (!currentPlayer) return;
         if (!activeBiddingTeam) return showToast("Select a Team Node first!", "error");
         
-        // Find the active team's live financial data
         const targetTeam = globalTeams.find(t => t.id === activeBiddingTeam);
         if (!targetTeam) return;
 
-        // 🧠 ALGORITHMIC FINANCIAL RUNWAY CHECK
         const formattingPurse = targetTeam.purse;
         const requiredRemainingSlots = Math.max(0, globalMeta.min_squad_size - (targetTeam.squad_size + 1));
-        const absoluteMinimumReserve = requiredRemainingSlots * 2000000; // ₹20 Lakhs per missing slot
+        const absoluteMinimumReserve = requiredRemainingSlots * 2000000; 
         
         if (currentBid > formattingPurse) {
             return showToast(`❌ Illegal Bid! ${targetTeam.name} only has ${formatCurrency(formattingPurse)} left.`, "error");
@@ -738,7 +793,7 @@
         
         if ((formattingPurse - currentBid) < absoluteMinimumReserve) {
             const maxAllowedBid = formattingPurse - absoluteMinimumReserve;
-            return showToast(`🚨 Bankrupt Warning! ${targetTeam.name} needs to reserve at least ${formatCurrency(absoluteMinimumReserve)} to fill out remaining ${requiredRemainingSlots} squad slots. Max safe bid is ${formatCurrency(maxAllowedBid)}.`, "warning");
+            return showToast(`🚨 Bankrupt Warning! safe bid is ${formatCurrency(maxAllowedBid)}.`, "warning");
         }
 
         try {
@@ -948,120 +1003,6 @@
             
             document.getElementById('seasonDetailsModal').style.display = 'flex';
         } catch(e) {}
-    }
-
-    function adjustInterfaceForRole() {
-        const setupContainer = document.getElementById('setup-form-container');
-        
-        if (!IS_HOST && CURRENT_ROOM_CODE) {
-            // 🚫 Hide settings safely if they exist
-            if (setupContainer) setupContainer.style.display = 'none';
-            
-            if (!document.getElementById('guest-waiting-screen')) {
-                const waitingBox = document.createElement('div');
-                waitingBox.id = 'guest-waiting-screen';
-                waitingBox.className = 'card';
-                waitingBox.style.textAlign = 'center';
-                waitingBox.style.padding = '40px 20px';
-                waitingBox.innerHTML = `
-                    <div class="spinner" style="margin: 0 auto 20px auto; width: 40px; height: 40px; border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    <h2>⏳ Waiting for Host to Launch Auction...</h2>
-                    <p style="color: var(--text-muted);">The commissioner is setting up the budget rules. Hang tight!</p>
-                `;
-                
-                if(!document.getElementById('spinner-style')) {
-                    const style = document.createElement('style');
-                    style.id = 'spinner-style';
-                    style.innerHTML = "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
-                    document.head.appendChild(style);
-                }
-                
-                // Safely insert the waiting screen
-                if (setupContainer && setupContainer.parentNode) {
-                    setupContainer.parentNode.insertBefore(waitingBox, setupContainer);
-                } else {
-                    document.getElementById('active-room-zone').appendChild(waitingBox);
-                }
-            } else {
-                document.getElementById('guest-waiting-screen').style.display = 'block';
-            }
-        } else {
-            // 👑 Show everything to the host
-            if (setupContainer) setupContainer.style.display = 'block';
-            if (document.getElementById('guest-waiting-screen')) {
-                document.getElementById('guest-waiting-screen').style.display = 'none';
-            }
-        }
-    }
-
-   async function initializeMultiplayerRoom() {
-        try {
-            const res = await safeFetch('/api/create-room', { method: 'POST' });
-            const data = await res.json();
-            if(data.room_code) {
-                sessionStorage.setItem('is_host', 'true');
-                IS_HOST = true;
-                switchRoomState(data.room_code);
-                showToast(`Lobby ${data.room_code} Created! You are the Host.`, "success");
-            }
-        } catch (e) { 
-            console.error("CRASH TRACE:", e); // 🌟 This will print the exact issue to your browser console!
-            showToast("Failed to compile multiplayer container.", "error"); 
-        }
-    }
-
-    async function joinMultiplayerRoom() {
-        const inputField = document.getElementById('roomCodeInput');
-        const targetCode = inputField.value.trim().toUpperCase();
-        if(targetCode.length !== 4) return showToast("Room codes must be exactly 4 characters.", "warning");
-
-        try {
-            const res = await fetch(`${API_BASE}/api/check-room/${targetCode}`);
-            if(res.ok) {
-                sessionStorage.setItem('is_host', 'false');
-                IS_HOST = false;
-                switchRoomState(targetCode);
-                showToast(`Connected to Lobby ${targetCode} as Guest`, "success");
-                inputField.value = "";
-            } else {
-                showToast("Lobby room code not found on server.", "error");
-            }
-        } catch(e) { showToast("Connection authentication failed.", "error"); }
-    }
-
-    function switchRoomState(code) {
-        CURRENT_ROOM_CODE = code;
-        sessionStorage.setItem('active_room_code', code);
-        document.getElementById('mode-selection-zone').style.display = 'none';
-        document.getElementById('active-room-zone').style.display = 'block';
-        document.getElementById('displayRoomCode').innerText = code;
-        
-        // 🌟 Adjust UI layouts instantly based on role authority
-        adjustInterfaceForRole();
-        loadLobby(); 
-    }
-
-    function leaveMultiplayerRoom() {
-        CURRENT_ROOM_CODE = null;
-        IS_HOST = false;
-        sessionStorage.removeItem('active_room_code');
-        sessionStorage.removeItem('is_host');
-        document.getElementById('mode-selection-zone').style.display = 'block';
-        document.getElementById('active-room-zone').style.display = 'none';
-        
-        // Restore standard setup form visibility for single-player
-        document.getElementById('setup-form-container').style.display = 'block'; 
-        if(document.getElementById('guest-waiting-screen')) {
-            document.getElementById('guest-waiting-screen').style.display = 'none';
-        }
-        
-        showToast("Returned to isolated private sandbox.", "info");
-        loadLobby();
-    }
-
-    // 🌟 AUTO-RUN CHECK ON PAGE REFRESH
-    if (CURRENT_ROOM_CODE) {
-        setTimeout(() => switchRoomState(CURRENT_ROOM_CODE), 100);
     }
 
 </script>
