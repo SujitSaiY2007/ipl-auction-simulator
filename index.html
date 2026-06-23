@@ -145,7 +145,8 @@
             <p style="color: var(--info); font-weight: bold; margin: 0;">Awaiting Host Launch Sequence...</p>
         </div>
         
-        <div class="panel flex-panel">
+        
+        <div class="panel flex-panel" id="operations-ledger-panel">
             <h3>📜 Operations Ledger</h3>
             <div id="pastGamesList" class="scrollable-content"></div>
         </div>
@@ -510,17 +511,23 @@
     }
 
     function updateLobbyUI() {
+        const operationsLedger = document.getElementById('operations-ledger-panel');
+        
         if (CURRENT_ROOM_CODE) {
             document.getElementById('mode-selection-zone').style.display = 'none';
             document.getElementById('active-room-zone').style.display = 'block';
             document.getElementById('displayRoomCode').innerText = CURRENT_ROOM_CODE;
 
             if (IS_HOST) {
+                // 👑 HOST SEES EVERYTHING
                 document.getElementById('setup-form-container').style.display = 'flex';
                 document.getElementById('guest-waiting-screen').style.display = 'none';
+                if(operationsLedger) operationsLedger.style.display = 'flex'; 
             } else {
+                // 👤 GUEST UI IS CLEANED UP
                 document.getElementById('setup-form-container').style.display = 'none';
                 document.getElementById('guest-waiting-screen').style.display = 'flex';
+                if(operationsLedger) operationsLedger.style.display = 'none'; // 🚫 Hides the saved games!
             }
         } else {
             // Solo Sandbox Defaults
@@ -528,6 +535,7 @@
             document.getElementById('active-room-zone').style.display = 'none';
             document.getElementById('setup-form-container').style.display = 'flex';
             document.getElementById('guest-waiting-screen').style.display = 'none';
+            if(operationsLedger) operationsLedger.style.display = 'flex';
         }
         loadLobby();
     }

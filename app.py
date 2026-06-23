@@ -19,20 +19,27 @@ SANDBOX_DIR = os.path.join(BASE_DIR, "sandboxes")
 ROOMS_DIR = os.path.join(BASE_DIR, "rooms")
 
 def upgrade_db_schema(conn):
-    """Dynamically patches legacy databases with new multiplayer columns."""
-    cursor = conn.cursor()
-    
-    # 1. Patch franchises table for Ownership (What we did earlier)
-    cursor.execute("PRAGMA table_info(franchises)")
-    if 'owner_token' not in [info[1] for info in cursor.fetchall()]:
-        cursor.execute("ALTER TABLE franchises ADD COLUMN owner_token TEXT")
+    """Safely patches the database without crashing if tables are missing or locked."""
+    try:
+        cursor = conn.cursor()
         
-    # 2. 🌟 NEW: Patch auction_meta table for Live Broadcasting
-    cursor.execute("PRAGMA table_info(auction_meta)")
-    if 'live_state' not in [info[1] for info in cursor.fetchall()]:
-        cursor.execute("ALTER TABLE auction_meta ADD COLUMN live_state TEXT")
-        
-    conn.commit()
+        # 1. Safely check and patch franchises table
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='franchises'")
+        if cursor.fetchone():
+            cursor.execute("PRAGMA table_info(franchises)")
+            if 'owner_token' not in [info[1] for info in cursor.fetchall()]:
+                cursor.execute("ALTER TABLE franchises ADD COLUMN owner_token TEXT")
+                
+        # 2. Safely check and patch auction_meta table
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_meta'")
+        if cursor.fetchone():
+            cursor.execute("PRAGMA table_info(auction_meta)")
+            if 'live_state' not in [info[1] for info in cursor.fetchall()]:
+                cursor.execute("ALTER TABLE auction_meta ADD COLUMN live_state TEXT")
+                
+        conn.commit()
+    except Exception as e:
+        print(f"Database Auto-Patch skipped safely: {e}")
 
 def get_db_connection():
     """Routes traffic based on multiplayer headers or falls back to solo sandbox."""
@@ -138,15 +145,29 @@ def calculate_ai_player_metrics(player, pitch_type):
 
 @app.route('/api/lobby/data', methods=['GET'])
 def get_lobby_data():
-    conn = get_db_connection(); cursor = conn.cursor()
     try:
-        cursor.execute("SELECT * FROM franchises ORDER BY name ASC")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Fetch the active franchises for the lobby
+        cursor.execute("SELECT * FROM franchises")
         franchises = [dict(row) for row in cursor.fetchall()]
-        cursor.execute("SELECT * FROM auctions ORDER BY id DESC")
+        
+        # Fetch the saved games for the Host's ledger
+        cursor.execute("SELECT id, name, status, pitch_type FROM auctions ORDER BY id DESC")
         auctions = [dict(row) for row in cursor.fetchall()]
-        return jsonify({"franchises": franchises, "auctions": auctions})
+        
+        return jsonify({
+            "franchises": franchises, 
+            "auctions": auctions
+        })
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": f"Lobby Fetch Error: {str(e)}"}), 500
     finally:
-        cursor.close(); conn.close()
+        if 'cursor' in locals(): cursor.close()
+        if 'conn' in locals(): conn.close()
 
 @app.route('/api/franchises/history', methods=['GET'])
 def get_hall_of_fame():
