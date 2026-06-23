@@ -19,21 +19,20 @@ SANDBOX_DIR = os.path.join(BASE_DIR, "sandboxes")
 ROOMS_DIR = os.path.join(BASE_DIR, "rooms")
 
 def upgrade_db_schema(conn):
-    """
-    Automatically checks and patches the database schema on the fly.
-    This ensures old sandboxes and rooms don't break with new updates.
-    """
+    """Dynamically patches legacy databases with new multiplayer columns."""
     cursor = conn.cursor()
     
-    # Check what columns currently exist in the franchises table
+    # 1. Patch franchises table for Ownership (What we did earlier)
     cursor.execute("PRAGMA table_info(franchises)")
-    columns = [info[1] for info in cursor.fetchall()]
-    
-    # If the new column is missing, inject it silently
-    if 'owner_token' not in columns:
+    if 'owner_token' not in [info[1] for info in cursor.fetchall()]:
         cursor.execute("ALTER TABLE franchises ADD COLUMN owner_token TEXT")
-        conn.commit()
-        print("Database Schema Upgraded: Added 'owner_token' to franchises.")
+        
+    # 2. 🌟 NEW: Patch auction_meta table for Live Broadcasting
+    cursor.execute("PRAGMA table_info(auction_meta)")
+    if 'live_state' not in [info[1] for info in cursor.fetchall()]:
+        cursor.execute("ALTER TABLE auction_meta ADD COLUMN live_state TEXT")
+        
+    conn.commit()
 
 def get_db_connection():
     """Routes traffic based on multiplayer headers or falls back to solo sandbox."""
@@ -554,6 +553,32 @@ def get_season_details(auction_id):
         return jsonify({"standings": standings, "rosters": players})
     finally:
         cursor.close(); conn.close()
+
+# 🌟 NEW ENDPOINT: Multiplayer Screen Synchronization
+@app.route('/api/broadcast', methods=['GET', 'POST'])
+def broadcast_state():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        auction_info = get_active_auction_id(cursor)
+        if not auction_info: 
+            return jsonify({"error": "No active session"}), 400
+
+        if request.method == 'POST':
+            # Host or Guest is pushing a new Bid or Timer state to the server
+            state_data = request.json.get('state', '{}')
+            cursor.execute("UPDATE auction_meta SET live_state = ? WHERE id = ?", (state_data, auction_info['id']))
+            conn.commit()
+            return jsonify({"status": "success"})
+        else:
+            # Guest is pulling the live state to update their screen
+            row = cursor.execute("SELECT live_state FROM auction_meta WHERE id = ?", (auction_info['id'],)).fetchone()
+            return jsonify({"state": row['live_state'] if row and row['live_state'] else '{}'})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
