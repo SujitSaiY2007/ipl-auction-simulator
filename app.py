@@ -577,6 +577,7 @@ def get_season_details(auction_id):
 
 
 # 🌟 MULTIPLAYER SYNC ENGINE WITH ISOLATED PLAYER ID BID PROTECTION
+# 🌟 MULTIPLAYER SYNC ENGINE WITH NAME-ISOLATED BID PROTECTION
 @app.route('/api/broadcast', methods=['GET', 'POST'])
 def broadcast_state():
     import json
@@ -595,18 +596,18 @@ def broadcast_state():
             if row and row['live_state'] and row['live_state'] != '{}':
                 current_state = json.loads(row['live_state'])
                 
-                # 🔍 Read player identities safely from both states
-                current_p_id = current_state.get('player', {}).get('auction_player_id') if current_state.get('player') else None
-                new_p_id = new_state.get('player', {}).get('auction_player_id') if new_state.get('player') else None
+                # 🔍 Read player names directly from the state dictionaries
+                current_p_name = current_state.get('player', {}).get('display_name') if current_state.get('player') else None
+                new_p_name = new_state.get('player', {}).get('display_name') if new_state.get('player') else None
                 
-                # 🛡️ Only enforce high-bid protection if we are dealing with the EXACT SAME PLAYER
-                if current_p_id == new_p_id:
+                # 🛡️ Only protect bids if we are actively dealing with the EXACT SAME PLAYER name
+                if current_p_name and current_p_name == new_p_name:
                     if current_state.get('bid', 0) > new_state.get('bid', 0):
                         new_state['bid'] = current_state['bid']  
                         new_state['activeTeam'] = current_state.get('activeTeam') 
                         state_data = json.dumps(new_state)
                 else:
-                    # 🚀 The player changed! Break the chain and allow the clean base price through.
+                    # 🚀 The player name changed! Safely drop the guard and pass the clean base price.
                     pass
 
             cursor.execute("UPDATE auctions SET live_state = ? WHERE id = ?", (state_data, auction_info['id']))

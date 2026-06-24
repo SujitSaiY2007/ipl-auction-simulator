@@ -413,11 +413,26 @@
                         if(concludeBtn) concludeBtn.style.display = 'none';
                     }
 
-                    // B) 🌟 TWO-WAY BID SYNC: Adopt the higher bid AND the team that made it
-                    if (serverState.bid > currentBid) {
+                    // B) 🌟 TWO-WAY BID SYNC: Adopt higher values only if the server player matches our screen player
+                    const serverPlayerName = serverState.player ? serverState.player.display_name : null;
+                    const localPlayerName = currentPlayer ? currentPlayer.display_name : null;
+
+                    if (serverPlayerName === localPlayerName && serverState.bid > currentBid) {
                         currentBid = serverState.bid;
                         document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid);
                         timeLeft = globalMeta ? globalMeta.timer_seconds : 60; 
+                        
+                        if (serverState.activeTeam) {
+                            activeBiddingTeam = serverState.activeTeam;
+                            document.querySelectorAll('.team-bid-btn').forEach(b => b.classList.remove('active-bidder'));
+                            const targetTeam = globalTeams.find(t => t.id === activeBiddingTeam);
+                            if(targetTeam) {
+                                document.querySelectorAll('.team-bid-btn').forEach(b => { 
+                                    if(b.innerText.includes(targetTeam.name)) b.classList.add('active-bidder'); 
+                                });
+                            }
+                        }
+                    } 
                         
                         // 🌟 VISUALLY HIGHLIGHT THE TEAM ON THE HOST SCREEN
                         if (serverState.activeTeam) {
