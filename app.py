@@ -576,7 +576,7 @@ def get_season_details(auction_id):
         cursor.close(); conn.close()
 
 
-# 🌟 UPDATED ENDPOINT: High-Speed Multiplayer Sync with Team Tracking
+# 🌟 MULTIPLAYER SYNC ENGINE WITH ISOLATED PLAYER ID BID PROTECTION
 @app.route('/api/broadcast', methods=['GET', 'POST'])
 def broadcast_state():
     import json
@@ -591,14 +591,23 @@ def broadcast_state():
             state_data = request.json.get('state', '{}')
             new_state = json.loads(state_data)
             
-            # 🛡️ THE BID ENFORCER: Preserve both the highest bid AND the Team who made it!
             row = cursor.execute("SELECT live_state FROM auctions WHERE id = ?", (auction_info['id'],)).fetchone()
             if row and row['live_state'] and row['live_state'] != '{}':
                 current_state = json.loads(row['live_state'])
-                if current_state.get('bid', 0) > new_state.get('bid', 0):
-                    new_state['bid'] = current_state['bid']  
-                    new_state['activeTeam'] = current_state.get('activeTeam') # 🌟 Lock in the team!
-                    state_data = json.dumps(new_state)
+                
+                # 🔍 Read player identities safely from both states
+                current_p_id = current_state.get('player', {}).get('auction_player_id') if current_state.get('player') else None
+                new_p_id = new_state.get('player', {}).get('auction_player_id') if new_state.get('player') else None
+                
+                # 🛡️ Only enforce high-bid protection if we are dealing with the EXACT SAME PLAYER
+                if current_p_id == new_p_id:
+                    if current_state.get('bid', 0) > new_state.get('bid', 0):
+                        new_state['bid'] = current_state['bid']  
+                        new_state['activeTeam'] = current_state.get('activeTeam') 
+                        state_data = json.dumps(new_state)
+                else:
+                    # 🚀 The player changed! Break the chain and allow the clean base price through.
+                    pass
 
             cursor.execute("UPDATE auctions SET live_state = ? WHERE id = ?", (state_data, auction_info['id']))
             conn.commit()

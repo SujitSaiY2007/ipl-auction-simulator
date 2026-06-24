@@ -387,15 +387,15 @@
                 if (data.state && data.state !== '{}') {
                     const serverState = JSON.parse(data.state);
 
-                    // A) 🔒 Sync Player Card (ONLY FOR GUEST! Host dictates who the player is)
+                    // A) 🔒 Sync Player Card (ONLY FOR GUEST!)
                     if (!IS_HOST && serverState.player && (!currentPlayer || currentPlayer.auction_player_id !== serverState.player.auction_player_id)) {
                         currentPlayer = serverState.player;
-                        currentBid = serverState.bid; // Updates variable to base price
+                        
+                        // 🌟 FORCE RESET: Wipes out local memory of the previous high bid instantly
+                        currentBid = serverState.bid; 
                         activeBiddingTeam = serverState.activeTeam;
                         
-                        // 🌟 FIX: Render the base price visually on the screen immediately!
                         document.getElementById('currentBidDisplay').innerText = formatCurrency(serverState.bid);
-                        
                         document.getElementById('playerName').innerText = serverState.player.display_name;
                         document.getElementById('playerRole').innerText = `${serverState.player.role} | ${serverState.player.country}`;
                         document.getElementById('basePrice').innerText = formatCurrency(serverState.player.base_price);
