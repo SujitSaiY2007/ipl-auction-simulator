@@ -387,9 +387,12 @@
                 if (data.state && data.state !== '{}') {
                     const serverState = JSON.parse(data.state);
 
-                    // A) Sync Player Card (Pulls Guest into the draft room)
-                    if (serverState.player && (!currentPlayer || currentPlayer.auction_player_id !== serverState.player.auction_player_id)) {
+                    // A) 🔒 Sync Player Card (ONLY FOR GUEST! Host dictates who the player is)
+                    if (!IS_HOST && serverState.player && (!currentPlayer || currentPlayer.auction_player_id !== serverState.player.auction_player_id)) {
                         currentPlayer = serverState.player;
+                        currentBid = serverState.bid;
+                        activeBiddingTeam = serverState.activeTeam;
+                        
                         document.getElementById('playerName').innerText = serverState.player.display_name;
                         document.getElementById('playerRole').innerText = `${serverState.player.role} | ${serverState.player.country}`;
                         document.getElementById('basePrice').innerText = formatCurrency(serverState.player.base_price);
@@ -400,10 +403,11 @@
                         
                         document.getElementById('preDraftState').style.display = 'none';
                         document.getElementById('activeDraftState').style.display = 'block';
+                        
                         const nextBtn = document.querySelector('button[onclick="fetchNextPlayer()"]');
                         const concludeBtn = document.querySelector('button[onclick="triggerPostAuctionFlow()"]');
-                        if(!IS_HOST && nextBtn) nextBtn.style.display = 'none';
-                        if(!IS_HOST && concludeBtn) concludeBtn.style.display = 'none';
+                        if(nextBtn) nextBtn.style.display = 'none';
+                        if(concludeBtn) concludeBtn.style.display = 'none';
                     }
 
                     // B) 🌟 TWO-WAY BID SYNC: Adopt the higher bid AND the team that made it
@@ -854,29 +858,47 @@
     }
 
     async function fetchNextPlayer() {
-        try {
-            const res = await safeFetch('/api/next-player');
-            const data = await res.json();
-            currentPlayer = data.player;
-            activeBiddingTeam = null; 
-            document.querySelectorAll('.team-bid-btn').forEach(b => b.classList.remove('active-bidder'));
+    try {
+        const res = await safeFetch('/api/next-player');
+        const data = await res.json();
+        currentPlayer = data.player;
+        activeBiddingTeam = null;
+        document.querySelectorAll('.team-bid-btn').forEach(b => b.classList.remove('active-bidder'));
 
-            document.getElementById('playerName').innerText = currentPlayer.display_name;
-            document.getElementById('playerRole').innerText = `${currentPlayer.role} | ${currentPlayer.country}`;
-            document.getElementById('basePrice').innerText = formatCurrency(currentPlayer.base_price);
+        document.getElementById('playerName').innerText = currentPlayer.display_name;
+        document.getElementById('playerRole').innerText = `${currentPlayer.role} | ${currentPlayer.country}`;
+        document.getElementById('basePrice').innerText = formatCurrency(currentPlayer.base_price);
+
+        document.getElementById('liveAiBadge').style.display = 'inline-block';
+        document.getElementById('liveAiBadge').innerText = `AI Score: ${currentPlayer.ai_rating}`;
+
+        document.getElementById('timerTextDisplay').style.display = 'block';
+        document.getElementById('timerBarContainer').style.display = 'block';
+
+        currentBid = currentPlayer.base_price;
+        document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid);
+
+        startTimer();
+
+        // 🚀 INSTANT FORCE-FORWARD: Tell the server to switch players immediately
+        if (CURRENT_ROOM_CODE && IS_HOST) {
+            const forwardState = JSON.stringify({
+                player: currentPlayer,
+                bid: currentBid,
+                time: globalMeta ? globalMeta.timer_seconds : 60,
+                locked: false,
+                activeTeam: null
+            });
             
-            document.getElementById('liveAiBadge').style.display = 'inline-block';
-            document.getElementById('liveAiBadge').innerText = `AI Score: ${currentPlayer.ai_rating}`;
-            
-            document.getElementById('timerTextDisplay').style.display = 'block';
-            document.getElementById('timerBarContainer').style.display = 'block';
-            
-            currentBid = currentPlayer.base_price;
-            document.getElementById('currentBidDisplay').innerText = formatCurrency(currentBid);
-            
-            startTimer();
-        } catch(e) {}
-    }
+            safeFetch('/api/broadcast', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({state: forwardState})
+            });
+        }
+
+    } catch(e) {}
+}
 
     function showDetailedStats() {
         if(!currentPlayer) return;
