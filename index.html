@@ -390,8 +390,11 @@
                     // A) 🔒 Sync Player Card (ONLY FOR GUEST! Host dictates who the player is)
                     if (!IS_HOST && serverState.player && (!currentPlayer || currentPlayer.auction_player_id !== serverState.player.auction_player_id)) {
                         currentPlayer = serverState.player;
-                        currentBid = serverState.bid;
+                        currentBid = serverState.bid; // Updates variable to base price
                         activeBiddingTeam = serverState.activeTeam;
+                        
+                        // 🌟 FIX: Render the base price visually on the screen immediately!
+                        document.getElementById('currentBidDisplay').innerText = formatCurrency(serverState.bid);
                         
                         document.getElementById('playerName').innerText = serverState.player.display_name;
                         document.getElementById('playerRole').innerText = `${serverState.player.role} | ${serverState.player.country}`;
