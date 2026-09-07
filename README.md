@@ -210,7 +210,7 @@ GitHub acts as the source-of-truth repository for the application code, document
 
 ## 🎓 Project Purpose
 
-This project was developed as a practical full-stack engineering exercise and as preparation alongside the **GUVI HCL AI App Development certification**.
+This project was developed as a practical full-stack engineering exercise and as a practice of using AI in development 
 
 It combines:
 
