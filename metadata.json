@@ -1,0 +1,6 @@
+{
+  "name": "IPL Esports Simulator",
+  "description": "Ultimate IPL Esports Simulator with live AI mock drafts, EV metrics, tactical insights, playing XI builder, and tournament analytics.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

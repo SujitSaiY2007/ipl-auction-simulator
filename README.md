@@ -1,87 +1,50 @@
-# 🏏 IPL Esports Simulator
+# 🏏 IPL Esports Simulator (Full-Stack React + Node.js + Gemini AI)
 
-## AI-Augmented Full-Stack Real-Time Multiplayer Auction Application
+## Advanced EV Metrics, Gemini Tactical War Room & Tournament Engine
 
-A full-stack, real-time multiplayer IPL auction simulator designed to reproduce the strategic, fast-paced environment of a professional cricket player auction. The application uses a decoupled frontend/backend architecture, with a browser-based auction interface communicating with a Flask backend and SQLite data layer.
-
-The project was also developed as an **AI-augmented software engineering project**, using Gemini Pro/Flash to accelerate prototyping, debugging, architectural iteration, and implementation of the real-time multiplayer system.
-
-> **Important:** AI augmentation refers to the development and engineering workflow. The core application itself is implemented using conventional HTML, CSS, JavaScript, Python, Flask, and SQLite components.
+A production-grade IPL mega auction esports simulator featuring deep statistical modeling, live algorithmic valuations, real-time multiplayer room synchronization, and Google Gemini AI tactical intelligence.
 
 ---
 
-## 🚀 Core Capabilities
+## 🚀 What's New & Core Capabilities
 
-### 🎯 Real-Time Multiplayer Auction
-- Host-controlled auction workflow with remote franchise participants.
-- Live synchronization of the active player, valuation, bidding state, and countdown timer.
-- Two-way state synchronization between Host and Guests.
-- Multiplayer lobby with room creation, joining, and franchise claiming.
+### 1. 🎨 Complete UI/UX Overhaul
+- **Modern Stadium & Esports Theme**: Glassmorphic dark cards, floodlight glow headers, franchise color indicators (CSK Yellow, MI Blue, RCB Red, KKR Purple, SRH Orange, RR Pink, DC Blue/Red, GT Navy/Gold, LSG Cyan/Navy, PBKS Red).
+- **Interactive Player Inventory**: Instant search bar with quick role filters (`All`, `Batters`, `Bowlers`, `All-Rounders`, `Keepers`, `Overseas`) and tier badges.
+- **Dynamic Bidding Arena**:
+  - Animated countdown bar with heartbeat pulse in final 10 seconds.
+  - Large green bid counter with formatted Crores.
+  - Franchise buttons with team primary colors and live active bidder highlight.
+  - Role-based franchise access control (Guests can only bid for their claimed team; Commissioner has override).
+  - Safety checks preventing illegal bids or violating minimum squad reserve funds.
+  - 🔨 SOLD, ❌ UNSOLD, ⏭️ Next, and ↩️ Undo controls.
+  - ⚡ 2x Sudden Death matrix automatically triggered when a team completes its minimum squad while other franchises trail behind.
 
-### 🛡️ Server-Side Bid Enforcement
-- Server-side validation protects auction state from conflicting client updates.
-- Player-name matching helps prevent stale or out-of-order requests from overwriting a newer bid.
-- Designed to mitigate multi-user race conditions during simultaneous bidding.
+### 2. 📊 Solidified IPL 2026 Player Database & Deep Telemetry
+- **Expanded Player Attributes**:
+  - `ipl_team_2026`: 2026 IPL franchise tags (e.g., RCB, MI, CSK, KKR, SRH, RR, DC, GT, LSG, PBKS).
+  - `tier`: `Marquee`, `Elite`, `Capped`, and `Uncapped`.
+  - `specialization`: Granular tactical roles (e.g. *World Premier Death Specialist & Yorker King*, *Spin Destroyer*, *Thunderbolt 156.7 kmph Pace Sensation*).
+  - `batting_style` and `bowling_style`.
+  - `matches`, `batting_runs`, `batting_avg`, `batting_strike_rate`, `fifties`, `hundreds`, `highest_score`.
+  - `bowling_wickets`, `bowling_avg`, `bowling_strike_rate`, `bowling_economy`, `four_w`, `five_w`, `best_bowling`.
+  - Detailed Scouting Trait report.
 
-### ⚡ Deterministic State Synchronization
-- Centralized server state provides a common source of truth for connected clients.
-- Host-controlled progression prevents client-side regression loops.
-- Force-forward mechanisms allow the auction to advance reliably after a player is sold or marked unsold.
+### 3. 🧠 Deep Gemini AI Integration (`gemini-3.8-flash`)
+- **Live AI War-Room Advisor (`/api/ai/live-advice`)**: Evaluates the active bid in real time with strategic recommendation (`STRONG_BID`, `CAUTIOUS_BID`, `PASS_RECOMMENDED`), ceiling price recommendation, pitch synergy, and squad fit.
+- **AI Franchise Squad Audit (`/api/ai/squad-audit`)**: Analyzes each franchise's roster depth, awarding a Tactical Composition Rating (/100), primary strength, structural vulnerability, and impact player suggestion.
+- **AI Season Forecast & Awards Simulation (`/api/ai/season-forecast`)**: Generates an exciting post-auction commentary report with headline, Orange Cap candidate, Purple Cap candidate, Dark Horse team, and championship narrative.
+- **Full Fallback Protection**: If the Gemini API is processing or an API key is not configured, a built-in algorithmic engine handles all valuations and tactical insights seamlessly without interruption.
 
-### 📊 Auction Management & Analytics
-- Player pool and base-price management.
-- Team purse and squad-state tracking.
-- Auction progression controls, undo/reset protection, and player transitions.
-- Post-auction statistics and analytics support.
+### 4. 👥 Game Mode Selection & Multi-Tab Synchronization
+- **Solo Sandbox**: Isolated draft state with local persistence.
+- **Multiplayer Shared Rooms**: Instant 4-letter room code generator. Guests can join, view claimed teams in the waiting room, and await commissioner launch. State synchronizes across tabs via the `BroadcastChannel` API.
 
-### 🗄️ Resilient Data Layer
-- SQLite-backed player, team, and auction data.
-- Automated schema checks/patches help accommodate database structure changes without unnecessarily discarding existing data.
-
----
-
-## 🤖 AI-Augmented Development
-
-This project demonstrates the use of generative AI as a **software engineering accelerator**, rather than treating AI as a replacement for application architecture or implementation.
-
-### AI-assisted workflow
-- **Rapid prototyping:** Gemini Pro/Flash was directed to prototype application components and workflows.
-- **Architecture iteration:** Used AI-assisted reasoning to explore and refine the decoupled frontend/backend design.
-- **Debugging:** Investigated JavaScript, Flask, synchronization, concurrency, and database issues with AI assistance.
-- **Concurrency & race-condition analysis:** Used AI-assisted analysis while designing the server-side Bid Enforcer and synchronization mechanisms.
-- **Implementation acceleration:** Iteratively refined features through human-directed AI development and testing.
-
-The final system remains a conventional full-stack web application with explicit application logic, server-side validation, persistent storage, and automated deployment.
-
----
-
-## 🧩 System Architecture
-
-```text
-                         IPL ESPORTS SIMULATOR
-                                  │
-                    ┌─────────────┴─────────────┐
-                    │                           │
-              FRONTEND                     BACKEND
-              GitHub Pages                PythonAnywhere
-                    │                           │
-              index.html                    app.py
-                    │                           │
-          HTML / CSS / Vanilla JS             Flask
-                    │                           │
-                    └────────── API ────────────┘
-                                │
-                              SQLite
-                                │
-                       Auction / Player Data
-```
-
-The application follows a **decoupled deployment model**:
-
-- **Frontend:** Static HTML/CSS/JavaScript delivered through GitHub Pages.
-- **Backend:** Flask application hosted on PythonAnywhere.
-- **Database:** SQLite used for persistent auction and application data.
-- **Deployment:** GitHub Actions supports the frontend deployment workflow.
+### 5. 📋 Playing XI Builder & Tournament Analytics
+- Sequential selection of 11-player squads enforcing the maximum 4 overseas player limit.
+- Tournament Balance Index (TBI) composite score across top 5 core batting averages, 5-man bowling attack, bench depth, and structural penalties.
+- Star ratings, team highlights/drawbacks, champion crown (👑), and celebratory confetti animation.
+- Permanent Hall of Fame and Operations Ledger.
 
 ---
 
@@ -89,153 +52,25 @@ The application follows a **decoupled deployment model**:
 
 | Layer | Technology |
 | :--- | :--- |
-| **AI-Augmented Development** | Gemini Pro / Gemini Flash |
-| **Frontend** | HTML5, CSS3, Vanilla ES6+ JavaScript |
-| **Backend** | Python 3.x, Flask |
-| **Database** | SQLite3 |
-| **API Communication** | HTTP / JSON |
-| **Frontend Hosting** | GitHub Pages |
-| **Backend Hosting** | PythonAnywhere |
-| **CI/CD** | GitHub Actions |
+| **Frontend Framework** | React 18 (Vite SPA) |
+| **Language** | TypeScript 5.7 |
+| **Backend Server** | Node.js 22 + Express 5 (Full-Stack server with Vite middleware) |
+| **AI Integration** | Google Gen AI SDK (`@google/genai`) using `gemini-3.8-flash` |
+| **Styling** | Custom CSS3 with Inter & Poppins typography, glassmorphism, and sports stadium palette |
+| **State & Sync** | React Context + LocalStorage + BroadcastChannel |
+| **Celebrations** | Canvas Confetti |
 
 ---
 
-## 📂 Project Structure
+## 🏃 Running the Application
 
-```text
-ipl-auction-simulator/
-│
-├── data/                    # Seed/configuration data and player assets
-├── app.py                   # Flask backend, API routes and server-side state logic
-├── index.html               # Single-page frontend and auction interface
-├── loaddata.py              # Database/data loading utility
-├── ipl_auction.db           # SQLite application database
-└── README.md                # Project documentation
+```bash
+# Install dependencies
+npm install
+
+# Start fullstack server on port 3000
+npm run dev
+
+# Build production bundle
+npm run build
 ```
-
----
-
-## 🔄 Multiplayer Flow
-
-```text
-Host creates room
-       │
-       ▼
- Server creates multiplayer session
-       │
-       ▼
-Guests join using room code
-       │
-       ▼
-Guests claim available franchises
-       │
-       ▼
-Host launches auction
-       │
-       ▼
- ┌──────────────────────────────┐
- │       Live Auction Loop      │
- │                              │
- │ Player → Bid → Validation    │
- │   → State Broadcast → Sync   │
- └──────────────────────────────┘
-       │
-       ▼
- Player Sold / Unsold
-       │
-       ▼
- Next Player / Auction Complete
-```
-
----
-
-## 🔐 Concurrency & Data Integrity
-
-A key engineering challenge was maintaining consistent auction state when multiple clients interact with the same player simultaneously.
-
-The system addresses this through:
-
-1. **Server-side validation** rather than trusting client state.
-2. **Bid enforcement** based on the current server-side player state.
-3. **Centralized state broadcasting** between connected clients.
-4. **Host-controlled auction progression** to prevent conflicting player transitions.
-5. **Database-backed persistence** for core auction data.
-
-This architecture was developed specifically to address race conditions, stale client state, and conflicting network updates encountered during multiplayer testing.
-
----
-
-## 🌐 Deployment
-
-### Frontend
-
-The frontend is deployed through GitHub Pages:
-
-**Live Application:**
-https://sujitsaiy2007.github.io/ipl-auction-simulator/
-
-### Backend
-
-The Flask API is hosted separately on PythonAnywhere and is consumed by the frontend through HTTP API requests.
-
-This separation allows the frontend to remain a static GitHub Pages deployment while retaining a live Python backend for multiplayer functionality.
-
----
-
-## 📈 Development & DevOps
-
-The project follows a lightweight continuous-delivery workflow:
-
-```text
-Development
-    ↓
-Git / GitHub
-    ↓
-GitHub Actions
-    ↓
-GitHub Pages
-    ↓
-Live Frontend
-
-Flask Application
-    ↓
-PythonAnywhere
-    ↓
-Live API Backend
-```
-
-GitHub acts as the source-of-truth repository for the application code, documentation, database assets, and deployment workflow.
-
----
-
-## 🎓 Project Purpose
-
-This project was developed as a practical full-stack engineering exercise and as a practice of using AI in development 
-
-It combines:
-
-- AI-assisted software development
-- Full-stack web application design
-- Real-time multiplayer synchronization
-- REST-style API development
-- Database-backed application state
-- Concurrency and race-condition handling
-- Cloud deployment
-- CI/CD practices
-
-The result is an end-to-end application that demonstrates how AI-assisted development can be combined with conventional software engineering principles to rapidly prototype, debug, and evolve a non-trivial full-stack system.
-
----
-
-## 🔗 Project Links
-
-- **GitHub Repository:** https://github.com/SujitSaiY2007/ipl-auction-simulator
-- **Live Application:** https://sujitsaiy2007.github.io/ipl-auction-simulator/
-
----
-
-## 👤 Project Author
-
-**Sujit Sai Y**
-
-AI-Augmented Full-Stack Application Development | Python | Flask | JavaScript | SQLite | GitHub Actions
