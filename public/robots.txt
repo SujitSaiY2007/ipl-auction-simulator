@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sujitsaiy2007.github.io/ipl-auction-simulator/sitemap.xml
